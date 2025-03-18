@@ -9,6 +9,7 @@ A simple command-line interface for searching Spotify's catalog for tracks, albu
 - Show detailed information about search results
 - Limit the number of results displayed
 - Color-coded output for better readability
+- Interactive menu mode for easier searching
 
 ## Installation
 
@@ -38,10 +39,11 @@ A simple command-line interface for searching Spotify's catalog for tracks, albu
 ### Options
 
 - `-type`: Type of search (track, album, or playlist). Default is "track".
-- `-query`: Search query. Required.
+- `-query`: Search query. Required for non-interactive mode.
 - `-artist`: Artist name to filter results (only for track search). Optional.
 - `-limit`: Number of results to display. Default is 5.
 - `-details`: Show detailed information about the results. Default is false.
+- `-interactive`: Run in interactive mode with a user-friendly menu interface.
 
 ### Examples
 
@@ -65,15 +67,32 @@ Search for playlists with detailed information:
 ./gspotify -type=playlist -query="workout" -details
 ```
 
+Run in interactive mode:
+```
+./gspotify -interactive
+```
+
+## Interactive Mode
+
+When running in interactive mode, the application presents a user-friendly form where you can:
+
+1. Select the search type (track, album, or playlist)
+2. Enter your search query
+3. Specify an artist name (for track searches)
+4. Set the number of results to display
+5. Choose whether to show detailed information
+
+After submitting the form, the search results will be displayed in the same tabular format as the non-interactive mode.
+
 ## Output
 
 The application displays results in a tabular format with relevant information for each type of search:
 
-- **Tracks**: ID, Track Name, Artist, Album, Popularity, URI
-- **Albums**: ID, Album Name, Artist, Release Date, Total Tracks, URI
-- **Playlists**: ID, Playlist Name, Owner, Total Tracks, URI
+- **Tracks**: ID, Track Name, Artist, Album, Popularity, Spotify Link, URI
+- **Albums**: ID, Album Name, Artist, Release Date, Total Tracks, Spotify Link, URI
+- **Playlists**: ID, Playlist Name, Owner, Total Tracks, Spotify Link, URI
 
-When the `-details` flag is used, additional information is displayed:
+When the `-details` flag is used or "Show Detailed Results" is selected in interactive mode, additional information is displayed:
 
 - **Tracks**: Audio features (Energy, Danceability, Valence, Tempo)
 - **Albums**: First few tracks

@@ -30,14 +30,15 @@ func openURL(url string) error {
 
 // ResultsUI represents a scrollable UI for displaying search results
 type ResultsUI struct {
-	app         *tview.Application
-	table       *tview.Table
-	frame       *tview.Frame
-	results     interface{}
-	resultType  string
-	client      *spotify.Client
-	ctx         context.Context
-	showDetails bool
+	app          *tview.Application
+	table        *tview.Table
+	frame        *tview.Frame
+	results      interface{}
+	resultType   string
+	client       *spotify.Client
+	ctx          context.Context
+	showDetails  bool
+	returnToMenu func() // Function to return to the main menu
 }
 
 // NewResultsUI creates a new scrollable UI for displaying search results
@@ -60,6 +61,12 @@ func NewResultsUI(resultType string, ctx context.Context, client *spotify.Client
 	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape, tcell.KeyCtrlC:
+			// Handle the case where returnToMenu is provided
+			if ui.returnToMenu != nil {
+				app.Stop()
+				ui.returnToMenu()
+				return nil
+			}
 			app.Stop()
 		case tcell.KeyEnter:
 			// Get the selected row
@@ -220,8 +227,14 @@ func (ui *ResultsUI) setupLayout(title string) {
 	// Create a frame to hold the table
 	ui.frame = tview.NewFrame(ui.table).
 		SetBorders(0, 0, 0, 0, 0, 0).
-		AddText(title, true, tview.AlignCenter, tcell.ColorWhite).
-		AddText("↑/↓: Navigate • Enter: Show Details • Click on Spotify Link to Open • ESC/Ctrl-C: Exit", false, tview.AlignCenter, tcell.ColorWhite)
+		AddText(title, true, tview.AlignCenter, tcell.ColorWhite)
+
+	// Add different bottom text based on whether returnToMenu is available
+	if ui.returnToMenu != nil {
+		ui.frame.AddText("↑/↓: Navigate • Enter: Show Details • Click on Spotify Link to Open • ESC/Ctrl-C: Return to Menu", false, tview.AlignCenter, tcell.ColorWhite)
+	} else {
+		ui.frame.AddText("↑/↓: Navigate • Enter: Show Details • Click on Spotify Link to Open • ESC/Ctrl-C: Exit", false, tview.AlignCenter, tcell.ColorWhite)
+	}
 
 	// Set the root and run the application
 	ui.app.SetRoot(ui.frame, true).EnableMouse(true)
@@ -526,6 +539,11 @@ func (ui *ResultsUI) displayDetails(row int) {
 	// Add buttons to the modal
 	buttons := []string{"Open in Spotify", "Close"}
 
+	// Add "Return to Menu" button if returnToMenu function is set
+	if ui.returnToMenu != nil {
+		buttons = []string{"Open in Spotify", "Close", "Return to Menu"}
+	}
+
 	modal.SetText(text).
 		AddButtons(buttons).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
@@ -551,6 +569,10 @@ func (ui *ResultsUI) displayDetails(row int) {
 						})
 					ui.app.SetRoot(infoModal, true)
 				}
+			} else if buttonIndex == 2 && ui.returnToMenu != nil {
+				// Return to the main menu
+				ui.app.Stop()
+				ui.returnToMenu()
 			} else {
 				ui.app.SetRoot(ui.frame, true)
 			}
@@ -566,4 +588,9 @@ func formatDuration(ms spotify.Numeric) string {
 	minutes := totalSeconds / 60
 	seconds := totalSeconds % 60
 	return fmt.Sprintf("%d:%02d", minutes, seconds)
+}
+
+// SetReturnToMenuFunction sets the function to be called to return to the main menu
+func (ui *ResultsUI) SetReturnToMenuFunction(returnFunc func()) {
+	ui.returnToMenu = returnFunc
 }
