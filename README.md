@@ -10,6 +10,8 @@ A simple command-line interface for searching Spotify's catalog for tracks, albu
 - Limit the number of results displayed
 - Color-coded output for better readability
 - Interactive menu mode for easier searching
+- Return to menu option after viewing search results
+- Short flag alternatives for all options
 
 ## Installation
 
@@ -38,38 +40,58 @@ A simple command-line interface for searching Spotify's catalog for tracks, albu
 
 ### Options
 
-- `-type`: Type of search (track, album, or playlist). Default is "track".
-- `-query`: Search query. Required for non-interactive mode.
-- `-artist`: Artist name to filter results (only for track search). Optional.
-- `-limit`: Number of results to display. Default is 5.
-- `-details`: Show detailed information about the results. Default is false.
-- `-interactive`: Run in interactive mode with a user-friendly menu interface.
+| Long Form | Short Form | Description | Default |
+|-----------|------------|-------------|---------|
+| `-type` | `-t` | Type of search (track, album, or playlist) | "track" |
+| `-query` | `-q` | Search query | Required |
+| `-artist` | `-a` | Artist name to filter results (only for track search) | Optional |
+| `-limit` | `-l` | Number of results to display | 5 |
+| `-details` | `-d` | Show detailed information about the results | false |
+| `-interactive` | `-i` | Run in interactive mode with a user-friendly menu interface | false |
+| `-return-to-menu` | `-r` | Return to interactive menu after viewing search results | false |
 
 ### Examples
 
 Search for tracks:
 ```
 ./gspotify -type=track -query="Bohemian Rhapsody"
+# or using short flags
+./gspotify -t track -q "Bohemian Rhapsody"
 ```
 
 Search for tracks by a specific artist:
 ```
 ./gspotify -type=track -query="Bohemian Rhapsody" -artist="Queen"
+# or using short flags
+./gspotify -t track -q "Bohemian Rhapsody" -a "Queen"
 ```
 
 Search for albums with a limit of 3 results:
 ```
 ./gspotify -type=album -query="Dark Side of the Moon" -limit=3
+# or using short flags
+./gspotify -t album -q "Dark Side of the Moon" -l 3
 ```
 
 Search for playlists with detailed information:
 ```
 ./gspotify -type=playlist -query="workout" -details
+# or using short flags
+./gspotify -t playlist -q "workout" -d
 ```
 
 Run in interactive mode:
 ```
 ./gspotify -interactive
+# or using short flag
+./gspotify -i
+```
+
+Search and return to menu:
+```
+./gspotify -query="Bohemian Rhapsody" -return-to-menu
+# or using short flag
+./gspotify -q "Bohemian Rhapsody" -r
 ```
 
 ## Interactive Mode
