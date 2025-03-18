@@ -13,9 +13,20 @@ import (
 
 // getSpotifyClient initializes and returns a Spotify client using client credentials flow
 func getSpotifyClient(ctx context.Context) *spotify.Client {
+	clientID := os.Getenv("SPOTIFY_ID")
+	clientSecret := os.Getenv("SPOTIFY_SECRET")
+
+	// Check if environment variables are set
+	if clientID == "" || clientSecret == "" {
+		log.Fatalf("Error: SPOTIFY_ID and SPOTIFY_SECRET environment variables must be set\n" +
+			"Please set them using:\n" +
+			"export SPOTIFY_ID=your_client_id\n" +
+			"export SPOTIFY_SECRET=your_client_secret")
+	}
+
 	config := &clientcredentials.Config{
-		ClientID:     "4592901f2a854ff0bde6d5a348f29539",
-		ClientSecret: "525f64edf0654150bc74434e7c6ee68c",
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
 		TokenURL:     spotifyauth.TokenURL,
 	}
 
