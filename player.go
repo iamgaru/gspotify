@@ -6,8 +6,6 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"net/http"
-	"os/exec"
-	"runtime"
 	"strings"
 	"time"
 
@@ -178,9 +176,51 @@ func (p *PlayerUI) Play() {
 
 // startPlayback starts track playback
 func (p *PlayerUI) startPlayback() {
-	// Start playback on your default device
+	// Start playback using Spotify Web API instead of opening URI
 	go func() {
-		err := openSpotifyURI(string(p.track.URI))
+		// Get available devices first
+		devices, err := p.client.PlayerDevices(p.ctx)
+		if err != nil {
+			p.app.QueueUpdateDraw(func() {
+				p.progressBar.SetText(fmt.Sprintf("[red]Error getting devices: %v[white]", err))
+			})
+			return
+		}
+
+		// Check if there are any active devices
+		if len(devices) == 0 {
+			p.app.QueueUpdateDraw(func() {
+				p.progressBar.SetText("[red]No active Spotify devices found. Please open Spotify on any device first.[white]")
+			})
+			return
+		}
+
+		// Find an active device to use
+		var deviceID spotify.ID
+		for _, device := range devices {
+			if device.Active {
+				deviceID = device.ID
+				break
+			}
+		}
+
+		// If no active device found, use the first available one
+		if deviceID == "" && len(devices) > 0 {
+			deviceID = devices[0].ID
+		}
+
+		// Set playback options
+		playOpts := &spotify.PlayOptions{
+			URIs: []spotify.URI{p.track.URI},
+		}
+
+		// If we have a device ID, specify it
+		if deviceID != "" {
+			playOpts.DeviceID = &deviceID
+		}
+
+		// Start playback on the device
+		err = p.client.PlayOpt(p.ctx, playOpts)
 		if err != nil {
 			p.app.QueueUpdateDraw(func() {
 				p.progressBar.SetText(fmt.Sprintf("[red]Error starting playback: %v[white]", err))
@@ -218,26 +258,9 @@ func (p *PlayerUI) startPlayback() {
 
 // pausePlayback pauses the current playback
 func (p *PlayerUI) pausePlayback() {
-	// Execute the Spotify pause command based on OS
+	// Use Spotify Web API to pause playback instead of OS-specific commands
 	go func() {
-		var cmd *exec.Cmd
-
-		switch runtime.GOOS {
-		case "darwin":
-			cmd = exec.Command("osascript", "-e", `tell application "Spotify" to pause`)
-		case "windows":
-			cmd = exec.Command("powershell", "-c", "(New-Object -ComObject WScript.Shell).SendKeys(' ')")
-		case "linux":
-			cmd = exec.Command("dbus-send", "--print-reply", "--dest=org.mpris.MediaPlayer2.spotify",
-				"/org/mpris/MediaPlayer2", "org.mpris.MediaPlayer2.Player.Pause")
-		default:
-			p.app.QueueUpdateDraw(func() {
-				p.progressBar.SetText("[red]Pause not supported on this OS[white]")
-			})
-			return
-		}
-
-		err := cmd.Run()
+		err := p.client.Pause(p.ctx)
 		if err != nil {
 			p.app.QueueUpdateDraw(func() {
 				p.progressBar.SetText(fmt.Sprintf("[red]Error pausing playback: %v[white]", err))
@@ -300,20 +323,4 @@ func (p *PlayerUI) updateProgressBar(elapsed time.Duration) {
 // SetReturnToMenuFunction sets the function to return to the main menu
 func (p *PlayerUI) SetReturnToMenuFunction(returnFunc func()) {
 	p.returnToMenu = returnFunc
-}
-
-// openSpotifyURI opens the specified Spotify URI
-func openSpotifyURI(uri string) error {
-	var cmd *exec.Cmd
-
-	switch runtime.GOOS {
-	case "darwin":
-		cmd = exec.Command("open", uri)
-	case "windows":
-		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", uri)
-	default: // linux, freebsd, etc.
-		cmd = exec.Command("xdg-open", uri)
-	}
-
-	return cmd.Run()
 }
