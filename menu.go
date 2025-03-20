@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/zmb3/spotify/v2"
 )
@@ -120,7 +121,22 @@ func (menu *InteractiveMenu) createMainMenu() tview.Primitive {
 		menu.app.Stop()
 	})
 
-	return form
+	// Add key capture for escape key to quit
+	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyEscape, tcell.KeyCtrlC:
+			menu.app.Stop()
+			return nil
+		}
+		return event
+	})
+
+	// Create a frame with the form and add footer text about keyboard shortcuts
+	frame := tview.NewFrame(form).
+		SetBorders(0, 0, 0, 0, 0, 0).
+		AddText("ESC/Ctrl-C: Quit", false, tview.AlignCenter, tcell.ColorWhite)
+
+	return frame
 }
 
 // showError displays an error message modal

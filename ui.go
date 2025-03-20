@@ -442,14 +442,52 @@ func (ui *ResultsUI) displayDetails(row int) {
 					AddText(fmt.Sprintf("Tracks from '%s'", album.Name), true, tview.AlignCenter, tcell.ColorWhite).
 					AddText("↑/↓: Navigate • Enter: Open Track • ESC: Back to Album Details", false, tview.AlignCenter, tcell.ColorWhite)
 
-				// Show the track list instead of the modal
-				ui.app.SetRoot(trackListFrame, true)
+				// Create and show the album details modal first instead of directly showing tracks
+				detailsModal := tview.NewModal().
+					SetText(text).
+					AddButtons([]string{"Open Album in Spotify", "View Tracks", "Close"}).
+					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+						if buttonIndex == 0 && spotifyLink != "" {
+							// Open album link
+							err := openURL(spotifyLink)
+							if err != nil {
+								infoModal := tview.NewModal().
+									SetText(fmt.Sprintf("Could not open browser automatically.\nSpotify link: %s\nURI: %s", spotifyLink, spotifyURI)).
+									AddButtons([]string{"OK"}).
+									SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+										ui.app.SetRoot(ui.frame, true)
+									})
+								ui.app.SetRoot(infoModal, true)
+							} else {
+								infoModal := tview.NewModal().
+									SetText(fmt.Sprintf("Opening in browser:\n%s", spotifyLink)).
+									AddButtons([]string{"OK"}).
+									SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+										ui.app.SetRoot(ui.frame, true)
+									})
+								ui.app.SetRoot(infoModal, true)
+							}
+						} else if buttonIndex == 1 {
+							// Show the track list when "View Tracks" is selected
+							ui.app.SetRoot(trackListFrame, true)
+						} else {
+							// Close and return to main view
+							ui.app.SetRoot(ui.frame, true)
+						}
+					})
+
+				ui.app.SetRoot(detailsModal, true)
 				return
 			}
 
 			// If we couldn't get tracks or there was an error, just show the album details
 			// Add buttons to the modal
 			buttons := []string{"Open in Spotify", "Close"}
+
+			// Add "Return to Menu" button if returnToMenu function is set
+			if ui.returnToMenu != nil {
+				buttons = []string{"Open in Spotify", "Close", "Return to Menu"}
+			}
 
 			modal.SetText(text).
 				AddButtons(buttons).
@@ -476,6 +514,10 @@ func (ui *ResultsUI) displayDetails(row int) {
 								})
 							ui.app.SetRoot(infoModal, true)
 						}
+					} else if buttonIndex == 2 && ui.returnToMenu != nil {
+						// Return to the main menu
+						ui.app.Stop()
+						ui.returnToMenu()
 					} else {
 						ui.app.SetRoot(ui.frame, true)
 					}
