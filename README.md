@@ -11,7 +11,8 @@ A simple command-line interface for searching Spotify's catalog for tracks, albu
 - Color-coded output for better readability
 - Interactive menu mode for easier searching
 - Return to menu option after viewing search results
-- Short flag alternatives for all options
+- Simple single-letter flags for easy command usage
+- User profile lookup functionality
 
 ## Installation
 
@@ -38,60 +39,84 @@ A simple command-line interface for searching Spotify's catalog for tracks, albu
 ./gspotify [options]
 ```
 
-### Options
+### Command Flags
 
-| Long Form | Short Form | Description | Default |
-|-----------|------------|-------------|---------|
-| `-type` | `-t` | Type of search (track, album, or playlist) | "track" |
-| `-query` | `-q` | Search query | Required |
-| `-artist` | `-a` | Artist name to filter results (only for track search) | Optional |
-| `-limit` | `-l` | Number of results to display | 5 |
-| `-details` | `-d` | Show detailed information about the results | false |
-| `-interactive` | `-i` | Run in interactive mode with a user-friendly menu interface | false |
-| `-return-to-menu` | `-r` | Return to interactive menu after viewing search results | false |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-t` | Type of search: track, album, or playlist | "track" |
+| `-q` | Search query | Required |
+| `-a` | Artist name to filter results (only for track search) | Optional |
+| `-l` | Number of results to display | 5 |
+| `-d` | Show detailed information about the results | false |
+| `-i` | Run in interactive mode with a menu interface | false |
+| `-r` | Return to interactive menu after viewing search results | false |
+| `-u` | Spotify user ID to look up profile information | Optional |
 
 ### Examples
 
+#### Basic Search
+
 Search for tracks:
 ```
-./gspotify -type=track -query="Bohemian Rhapsody"
-# or using short flags
-./gspotify -t track -q "Bohemian Rhapsody"
+./gspotify -q "Bohemian Rhapsody"
 ```
 
 Search for tracks by a specific artist:
 ```
-./gspotify -type=track -query="Bohemian Rhapsody" -artist="Queen"
-# or using short flags
-./gspotify -t track -q "Bohemian Rhapsody" -a "Queen"
+./gspotify -q "Bohemian Rhapsody" -a "Queen"
 ```
 
-Search for albums with a limit of 3 results:
+#### Changing Search Type
+
+Search for albums:
 ```
-./gspotify -type=album -query="Dark Side of the Moon" -limit=3
-# or using short flags
-./gspotify -t album -q "Dark Side of the Moon" -l 3
+./gspotify -t album -q "Dark Side of the Moon"
 ```
 
-Search for playlists with detailed information:
+Search for playlists:
 ```
-./gspotify -type=playlist -query="workout" -details
-# or using short flags
-./gspotify -t playlist -q "workout" -d
+./gspotify -t playlist -q "workout"
+```
+
+#### Additional Options
+
+Limit results to 3:
+```
+./gspotify -q "Dark Side of the Moon" -l 3
+```
+
+Show detailed information:
+```
+./gspotify -q "workout" -d
 ```
 
 Run in interactive mode:
 ```
-./gspotify -interactive
-# or using short flag
 ./gspotify -i
 ```
 
 Search and return to menu:
 ```
-./gspotify -query="Bohemian Rhapsody" -return-to-menu
-# or using short flag
 ./gspotify -q "Bohemian Rhapsody" -r
+```
+
+#### Combined Options
+
+Search for Queen albums with detailed information:
+```
+./gspotify -t album -q "Queen" -d
+```
+
+Search for workout playlists, limit to 10, and show details:
+```
+./gspotify -t playlist -q "workout" -l 10 -d
+```
+
+#### User Profile Lookup
+
+Look up a Spotify user's public profile:
+```
+./gspotify -u spotify
 ```
 
 ## Interactive Mode
@@ -114,7 +139,7 @@ The application displays results in a tabular format with relevant information f
 - **Albums**: ID, Album Name, Artist, Release Date, Total Tracks, Spotify Link, URI
 - **Playlists**: ID, Playlist Name, Owner, Total Tracks, Spotify Link, URI
 
-When the `-details` flag is used or "Show Detailed Results" is selected in interactive mode, additional information is displayed:
+When the `-d` flag is used or "Show Detailed Results" is selected in interactive mode, additional information is displayed:
 
 - **Tracks**: Audio features (Energy, Danceability, Valence, Tempo)
 - **Albums**: First few tracks

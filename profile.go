@@ -15,7 +15,12 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
-var userID = flag.String("user", "", "the Spotify user ID to look up")
+var userID = flag.String("u", "", "the Spotify user ID to look up")
+
+func init() {
+	// Add long flag alternative (hidden from help)
+	flag.StringVar(userID, "user", "", "")
+}
 
 func profile() {
 	flag.Parse()

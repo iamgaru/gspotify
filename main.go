@@ -11,43 +11,62 @@ import (
 func main() {
 	// Define command line flags
 	var (
-		searchType   = flag.String("type", "track", "Type of search: track, album, or playlist")
-		searchQuery  = flag.String("query", "", "Search query")
-		artistName   = flag.String("artist", "", "Artist name to filter results (only for track search)")
-		limit        = flag.Int("limit", 5, "Number of results to display")
-		showDetails  = flag.Bool("details", false, "Show detailed information about the results")
-		interactive  = flag.Bool("interactive", false, "Run in interactive mode with a menu interface")
-		returnToMenu = flag.Bool("return-to-menu", false, "Return to interactive menu after viewing search results")
+		searchType   = flag.String("t", "track", "Type of search: track, album, or playlist")
+		searchQuery  = flag.String("q", "", "Search query")
+		artistName   = flag.String("a", "", "Artist name to filter results (only for track search)")
+		limit        = flag.Int("l", 5, "Number of results to display")
+		showDetails  = flag.Bool("d", false, "Show detailed information about the results")
+		interactive  = flag.Bool("i", false, "Run in interactive mode with a menu interface")
+		returnToMenu = flag.Bool("r", false, "Return to interactive menu after viewing search results")
 	)
 
-	// Add short flag alternatives
-	flag.StringVar(searchType, "t", "track", "Short for -type")
-	flag.StringVar(searchQuery, "q", "", "Short for -query")
-	flag.StringVar(artistName, "a", "", "Short for -artist")
-	flag.IntVar(limit, "l", 5, "Short for -limit")
-	flag.BoolVar(showDetails, "d", false, "Short for -details")
-	flag.BoolVar(interactive, "i", false, "Short for -interactive")
-	flag.BoolVar(returnToMenu, "r", false, "Short for -return-to-menu")
+	// Add long flag alternatives (kept for backward compatibility but not documented)
+	flag.StringVar(searchType, "type", "track", "")
+	flag.StringVar(searchQuery, "query", "", "")
+	flag.StringVar(artistName, "artist", "", "")
+	flag.IntVar(limit, "limit", 5, "")
+	flag.BoolVar(showDetails, "details", false, "")
+	flag.BoolVar(interactive, "interactive", false, "")
+	flag.BoolVar(returnToMenu, "return-to-menu", false, "")
 
 	// Define usage information
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "A CLI tool to search Spotify for tracks, albums, and playlists.\n\n")
 		fmt.Fprintf(os.Stderr, "Options:\n")
-		flag.PrintDefaults()
+
+		// Only print flags that have descriptions (the single-letter flags)
+		flag.VisitAll(func(f *flag.Flag) {
+			if f.Usage != "" {
+				fmt.Fprintf(os.Stderr, "  -%s", f.Name)
+				name, usage := flag.UnquoteUsage(f)
+				if len(name) > 0 {
+					fmt.Fprintf(os.Stderr, " %s", name)
+				}
+				// Boolean flags of one ASCII letter are so common we
+				// treat them specially, putting their usage on the same line.
+				if len(f.Name) <= 1 && f.DefValue == "false" {
+					fmt.Fprintf(os.Stderr, "\t%s", usage)
+				} else {
+					fmt.Fprintf(os.Stderr, "\n\t%s", usage)
+					if f.DefValue != "" {
+						if f.DefValue != "0" && f.DefValue != "false" {
+							fmt.Fprintf(os.Stderr, " (default %v)", f.DefValue)
+						}
+					}
+				}
+				fmt.Fprint(os.Stderr, "\n")
+			}
+		})
+
 		fmt.Fprintf(os.Stderr, "\nExamples:\n")
-		fmt.Fprintf(os.Stderr, "  %s -type=track -query=\"Bohemian Rhapsody\"\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -t track -q \"Bohemian Rhapsody\"\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s -type=track -query=\"Bohemian Rhapsody\" -artist=\"Queen\"\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -t track -q \"Bohemian Rhapsody\" -a \"Queen\"\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s -type=album -query=\"Dark Side of the Moon\" -limit=3\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -t album -q \"Dark Side of the Moon\" -l 3\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s -type=playlist -query=\"workout\" -details\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -t playlist -q \"workout\" -d\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s -interactive\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -i\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s -query=\"Bohemian Rhapsody\" -return-to-menu\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -q \"Bohemian Rhapsody\" -r\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -u spotify\n", os.Args[0])
 	}
 
 	flag.Parse()
