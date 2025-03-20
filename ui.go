@@ -243,24 +243,25 @@ func (ui *ResultsUI) setupLayout(title string) {
 	}
 }
 
-// displayDetails shows detailed information about the selected item
+// displayDetails displays detailed information about the selected search result
 func (ui *ResultsUI) displayDetails(row int) {
-	if row == 0 { // Header row
+	if row <= 0 {
 		return
 	}
-
-	// Create a modal for displaying details
-	modal := tview.NewModal()
 
 	var text string
 	var spotifyLink string
 	var spotifyURI string
+	var canPlay bool = false
+	var selectedTrack *spotify.FullTrack = nil
 
 	switch ui.resultType {
 	case "track":
 		tracks := ui.results.([]spotify.FullTrack)
 		if row-1 < len(tracks) {
 			track := tracks[row-1]
+			selectedTrack = &track
+
 			artists := make([]string, len(track.Artists))
 			for i, artist := range track.Artists {
 				artists[i] = artist.Name
@@ -268,26 +269,17 @@ func (ui *ResultsUI) displayDetails(row int) {
 
 			spotifyLink = fmt.Sprintf("https://open.spotify.com/track/%s", track.ID)
 			spotifyURI = string(track.URI)
+			canPlay = true
 
-			text = fmt.Sprintf("Track: %s\nArtist(s): %s\nAlbum: %s\nPopularity: %d\nSpotify Link: %s\nURI: %s",
+			text = fmt.Sprintf("Track: %s\nArtist(s): %s\nAlbum: %s\nRelease Date: %s\nPopularity: %d\nDuration: %s\nSpotify Link: %s\nURI: %s",
 				track.Name,
 				strings.Join(artists, ", "),
 				track.Album.Name,
+				track.Album.ReleaseDate,
 				track.Popularity,
+				formatDuration(track.Duration),
 				spotifyLink,
 				track.URI)
-
-			// Add audio features if showDetails is true
-			if ui.showDetails {
-				features, err := ui.client.GetAudioFeatures(ui.ctx, track.ID)
-				if err == nil && len(features) > 0 {
-					text += fmt.Sprintf("\n\nAudio Features:\nEnergy: %.2f\nDanceability: %.2f\nValence: %.2f\nTempo: %.2f",
-						features[0].Energy,
-						features[0].Danceability,
-						features[0].Valence,
-						features[0].Tempo)
-				}
-			}
 		}
 	case "album":
 		albums := ui.results.([]spotify.SimpleAlbum)
@@ -321,211 +313,101 @@ func (ui *ResultsUI) displayDetails(row int) {
 				// Add tracks to the list
 				for i, track := range albumTracks.Tracks {
 					trackSpotifyLink := fmt.Sprintf("https://open.spotify.com/track/%s", track.ID)
-					trackURI := string(track.URI)
+					trackID := string(track.ID)
 
-					// Create a closure to capture the current track's link and URI
+					// Create a closure to capture the current track's info and ID
 					trackList.AddItem(fmt.Sprintf("%d. %s", i+1, track.Name),
 						fmt.Sprintf("Duration: %s", formatDuration(track.Duration)),
 						rune('1'+i),
-						func(trackLink, trackUri string) func() {
+						func(trackLink string, trackID string) func() {
 							return func() {
-								// Try to open the link in the default browser
-								err := openURL(trackLink)
-								if err != nil {
-									// If opening the browser fails, just show the link
-									infoModal := tview.NewModal().
-										SetText(fmt.Sprintf("Could not open browser automatically.\nSpotify link: %s\nURI: %s", trackLink, trackUri)).
-										AddButtons([]string{"OK"}).
-										SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+								// Show a modal with options for this track
+								trackModal := tview.NewModal().
+									SetText(fmt.Sprintf("Track: %s\nDuration: %s", track.Name, formatDuration(track.Duration))).
+									AddButtons([]string{"Play", "Open in Spotify", "Back"}).
+									SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+										switch buttonLabel {
+										case "Play":
+											// Get the full track to play
+											fullTrack, err := ui.client.GetTrack(ui.ctx, spotify.ID(trackID))
+											if err != nil {
+												infoModal := tview.NewModal().
+													SetText(fmt.Sprintf("Error getting track: %v", err)).
+													AddButtons([]string{"OK"}).
+													SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+														ui.app.SetRoot(trackList, true)
+													})
+												ui.app.SetRoot(infoModal, true)
+												return
+											}
+
+											// Stop the current application
+											ui.app.Stop()
+
+											// Create a new player UI for the selected track
+											playerUI := NewPlayerUI(ui.ctx, ui.client, *fullTrack)
+
+											// Set up the return to results function if needed
+											if ui.returnToMenu != nil {
+												playerUI.SetReturnToMenuFunction(ui.returnToMenu)
+											}
+
+											// Start playback
+											playerUI.Play()
+
+										case "Open in Spotify":
+											// Try to open the link in the default browser
+											err := openURL(trackLink)
+											if err != nil {
+												// If opening the browser fails, just show the link
+												infoModal := tview.NewModal().
+													SetText(fmt.Sprintf("Could not open browser automatically.\nSpotify link: %s", trackLink)).
+													AddButtons([]string{"OK"}).
+													SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+														ui.app.SetRoot(trackList, true)
+													})
+												ui.app.SetRoot(infoModal, true)
+											} else {
+												// Show a confirmation that the link was opened
+												infoModal := tview.NewModal().
+													SetText(fmt.Sprintf("Opening in browser:\n%s", trackLink)).
+													AddButtons([]string{"OK"}).
+													SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+														ui.app.SetRoot(trackList, true)
+													})
+												ui.app.SetRoot(infoModal, true)
+											}
+										case "Back":
 											ui.app.SetRoot(trackList, true)
-										})
-									ui.app.SetRoot(infoModal, true)
-								} else {
-									// Show a confirmation that the link was opened
-									infoModal := tview.NewModal().
-										SetText(fmt.Sprintf("Opening in browser:\n%s", trackLink)).
-										AddButtons([]string{"OK"}).
-										SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-											ui.app.SetRoot(trackList, true)
-										})
-									ui.app.SetRoot(infoModal, true)
-								}
+										}
+									})
+								ui.app.SetRoot(trackModal, true)
 							}
-						}(trackSpotifyLink, trackURI))
+						}(trackSpotifyLink, trackID))
 				}
 
 				// Add a "Back" option at the end of the list
-				trackList.AddItem("Back to Album Details", "", 'b', func() {
-					// Create a modal with album details
-					detailsModal := tview.NewModal().
-						SetText(text).
-						AddButtons([]string{"Open Album in Spotify", "View Tracks", "Close"}).
-						SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-							if buttonIndex == 0 && spotifyLink != "" {
-								// Open album link
-								err := openURL(spotifyLink)
-								if err != nil {
-									infoModal := tview.NewModal().
-										SetText(fmt.Sprintf("Could not open browser automatically.\nSpotify link: %s\nURI: %s", spotifyLink, spotifyURI)).
-										AddButtons([]string{"OK"}).
-										SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-											ui.app.SetRoot(ui.frame, true)
-										})
-									ui.app.SetRoot(infoModal, true)
-								} else {
-									infoModal := tview.NewModal().
-										SetText(fmt.Sprintf("Opening in browser:\n%s", spotifyLink)).
-										AddButtons([]string{"OK"}).
-										SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-											ui.app.SetRoot(ui.frame, true)
-										})
-									ui.app.SetRoot(infoModal, true)
-								}
-							} else if buttonIndex == 1 {
-								// Go back to track list
-								ui.app.SetRoot(trackList, true)
-							} else {
-								// Close and return to main view
-								ui.app.SetRoot(ui.frame, true)
-							}
-						})
-
-					ui.app.SetRoot(detailsModal, true)
+				trackList.AddItem("Back", "Return to search results", 'b', func() {
+					ui.app.SetRoot(ui.frame, true)
 				})
 
-				// Set up key bindings for the track list
-				trackList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-					if event.Key() == tcell.KeyEscape {
-						// Create a modal with album details
-						detailsModal := tview.NewModal().
-							SetText(text).
-							AddButtons([]string{"Open Album in Spotify", "View Tracks", "Close"}).
-							SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-								if buttonIndex == 0 && spotifyLink != "" {
-									// Open album link
-									err := openURL(spotifyLink)
-									if err != nil {
-										infoModal := tview.NewModal().
-											SetText(fmt.Sprintf("Could not open browser automatically.\nSpotify link: %s\nURI: %s", spotifyLink, spotifyURI)).
-											AddButtons([]string{"OK"}).
-											SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-												ui.app.SetRoot(ui.frame, true)
-											})
-										ui.app.SetRoot(infoModal, true)
-									} else {
-										infoModal := tview.NewModal().
-											SetText(fmt.Sprintf("Opening in browser:\n%s", spotifyLink)).
-											AddButtons([]string{"OK"}).
-											SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-												ui.app.SetRoot(ui.frame, true)
-											})
-										ui.app.SetRoot(infoModal, true)
-									}
-								} else if buttonIndex == 1 {
-									// Go back to track list
-									ui.app.SetRoot(trackList, true)
-								} else {
-									// Close and return to main view
-									ui.app.SetRoot(ui.frame, true)
-								}
-							})
+				trackList.SetBorder(true).
+					SetTitle(fmt.Sprintf(" %s - Track List ", album.Name)).
+					SetTitleAlign(tview.AlignCenter)
 
-						ui.app.SetRoot(detailsModal, true)
+				trackList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+					switch event.Key() {
+					case tcell.KeyEscape:
+						ui.app.SetRoot(ui.frame, true)
 						return nil
 					}
 					return event
 				})
 
-				// Set the title for the track list
-				trackListFrame := tview.NewFrame(trackList).
-					SetBorders(0, 0, 0, 0, 0, 0).
-					AddText(fmt.Sprintf("Tracks from '%s'", album.Name), true, tview.AlignCenter, tcell.ColorWhite).
-					AddText("↑/↓: Navigate • Enter: Open Track • ESC: Back to Album Details", false, tview.AlignCenter, tcell.ColorWhite)
-
-				// Create and show the album details modal first instead of directly showing tracks
-				detailsModal := tview.NewModal().
-					SetText(text).
-					AddButtons([]string{"Open Album in Spotify", "View Tracks", "Close"}).
-					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-						if buttonIndex == 0 && spotifyLink != "" {
-							// Open album link
-							err := openURL(spotifyLink)
-							if err != nil {
-								infoModal := tview.NewModal().
-									SetText(fmt.Sprintf("Could not open browser automatically.\nSpotify link: %s\nURI: %s", spotifyLink, spotifyURI)).
-									AddButtons([]string{"OK"}).
-									SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-										ui.app.SetRoot(ui.frame, true)
-									})
-								ui.app.SetRoot(infoModal, true)
-							} else {
-								infoModal := tview.NewModal().
-									SetText(fmt.Sprintf("Opening in browser:\n%s", spotifyLink)).
-									AddButtons([]string{"OK"}).
-									SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-										ui.app.SetRoot(ui.frame, true)
-									})
-								ui.app.SetRoot(infoModal, true)
-							}
-						} else if buttonIndex == 1 {
-							// Show the track list when "View Tracks" is selected
-							ui.app.SetRoot(trackListFrame, true)
-						} else {
-							// Close and return to main view
-							ui.app.SetRoot(ui.frame, true)
-						}
-					})
-
-				ui.app.SetRoot(detailsModal, true)
+				// Show the track list
+				ui.app.SetRoot(trackList, true)
 				return
 			}
-
-			// If we couldn't get tracks or there was an error, just show the album details
-			// Add buttons to the modal
-			buttons := []string{"Open in Spotify", "Close"}
-
-			// Add "Return to Menu" button if returnToMenu function is set
-			if ui.returnToMenu != nil {
-				buttons = []string{"Open in Spotify", "Close", "Return to Menu"}
-			}
-
-			modal.SetText(text).
-				AddButtons(buttons).
-				SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-					if buttonIndex == 0 && spotifyLink != "" {
-						// Try to open the link in the default browser
-						err := openURL(spotifyLink)
-						if err != nil {
-							// If opening the browser fails, just show the link
-							infoModal := tview.NewModal().
-								SetText(fmt.Sprintf("Could not open browser automatically.\nSpotify link: %s\nURI: %s", spotifyLink, spotifyURI)).
-								AddButtons([]string{"OK"}).
-								SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-									ui.app.SetRoot(ui.frame, true)
-								})
-							ui.app.SetRoot(infoModal, true)
-						} else {
-							// Show a confirmation that the link was opened
-							infoModal := tview.NewModal().
-								SetText(fmt.Sprintf("Opening in browser:\n%s", spotifyLink)).
-								AddButtons([]string{"OK"}).
-								SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-									ui.app.SetRoot(ui.frame, true)
-								})
-							ui.app.SetRoot(infoModal, true)
-						}
-					} else if buttonIndex == 2 && ui.returnToMenu != nil {
-						// Return to the main menu
-						ui.app.Stop()
-						ui.returnToMenu()
-					} else {
-						ui.app.SetRoot(ui.frame, true)
-					}
-				})
-
-			// Display the modal
-			ui.app.SetRoot(modal, true)
-			return
 		}
 	case "playlist":
 		playlists := ui.results.([]spotify.SimplePlaylist)
@@ -550,29 +432,117 @@ func (ui *ResultsUI) displayDetails(row int) {
 			if ui.showDetails {
 				fullPlaylist, err := ui.client.GetPlaylist(ui.ctx, playlist.ID)
 				if err == nil && fullPlaylist != nil && len(fullPlaylist.Tracks.Tracks) > 0 {
-					text += "\n\nSample Tracks:"
+					// Create a list view for tracks
+					trackList := tview.NewList().
+						SetMainTextColor(tcell.ColorWhite).
+						SetSelectedTextColor(tcell.ColorBlack).
+						SetSelectedBackgroundColor(tcell.ColorGreen)
 
-					// Show up to 10 tracks
-					trackLimit := 10
-					if trackLimit > len(fullPlaylist.Tracks.Tracks) {
-						trackLimit = len(fullPlaylist.Tracks.Tracks)
-					}
-
-					for i := 0; i < trackLimit; i++ {
-						trackName := fmt.Sprintf("Track %d", i+1)
-
-						// Try to get the track name
-						if fullPlaylist.Tracks.Tracks[i].Track.Name != "" {
-							trackName = fullPlaylist.Tracks.Tracks[i].Track.Name
+					// Add tracks to the list
+					for i, playlistItem := range fullPlaylist.Tracks.Tracks {
+						if i >= 50 { // Limit to first 50 tracks for performance
+							break
 						}
 
-						text += fmt.Sprintf("\n%d. %s", i+1, trackName)
+						// Skip local tracks or tracks with no data
+						if playlistItem.IsLocal {
+							continue
+						}
+
+						// Get the track from the playlist item
+						track := playlistItem.Track
+
+						// Skip if track has no data (e.g., removed from Spotify)
+						if track.ID == "" {
+							continue
+						}
+
+						trackSpotifyLink := fmt.Sprintf("https://open.spotify.com/track/%s", track.ID)
+
+						// Create a closure to capture the current track's information
+						trackList.AddItem(fmt.Sprintf("%d. %s", i+1, track.Name),
+							fmt.Sprintf("Artist: %s • Duration: %s", track.Artists[0].Name, formatDuration(track.Duration)),
+							rune('1'+i%9), // Use 1-9 as shortcuts and cycle
+							func(t spotify.FullTrack, tLink string) func() {
+								return func() {
+									// Show a modal with options for this track
+									trackModal := tview.NewModal().
+										SetText(fmt.Sprintf("Track: %s\nArtist: %s\nDuration: %s",
+											t.Name, t.Artists[0].Name, formatDuration(t.Duration))).
+										AddButtons([]string{"Play", "Open in Spotify", "Back"}).
+										SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+											switch buttonLabel {
+											case "Play":
+												// Stop the current application
+												ui.app.Stop()
+
+												// Create a new player UI for the selected track
+												playerUI := NewPlayerUI(ui.ctx, ui.client, t)
+
+												// Set up the return to results function if needed
+												if ui.returnToMenu != nil {
+													playerUI.SetReturnToMenuFunction(ui.returnToMenu)
+												}
+
+												// Start playback
+												playerUI.Play()
+
+											case "Open in Spotify":
+												err := openURL(tLink)
+												if err != nil {
+													infoModal := tview.NewModal().
+														SetText(fmt.Sprintf("Could not open browser automatically.\nSpotify link: %s", tLink)).
+														AddButtons([]string{"OK"}).
+														SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+															ui.app.SetRoot(trackList, true)
+														})
+													ui.app.SetRoot(infoModal, true)
+												} else {
+													infoModal := tview.NewModal().
+														SetText(fmt.Sprintf("Opening in browser:\n%s", tLink)).
+														AddButtons([]string{"OK"}).
+														SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+															ui.app.SetRoot(trackList, true)
+														})
+													ui.app.SetRoot(infoModal, true)
+												}
+											case "Back":
+												ui.app.SetRoot(trackList, true)
+											}
+										})
+									ui.app.SetRoot(trackModal, true)
+								}
+							}(track, trackSpotifyLink))
 					}
 
+					// Add a "Back" option at the end of the list
+					trackList.AddItem("Back", "Return to search results", 'b', func() {
+						ui.app.SetRoot(ui.frame, true)
+					})
+
+					// Add a note if there are more tracks
 					totalTracks := int(playlist.Tracks.Total)
-					if totalTracks > trackLimit {
-						text += fmt.Sprintf("\n...and %d more tracks", totalTracks-trackLimit)
+					if totalTracks > 50 {
+						trackList.AddItem(fmt.Sprintf("...and %d more tracks", totalTracks-50),
+							"Unable to display all tracks", 'm', nil)
 					}
+
+					trackList.SetBorder(true).
+						SetTitle(fmt.Sprintf(" %s - Track List ", playlist.Name)).
+						SetTitleAlign(tview.AlignCenter)
+
+					trackList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+						switch event.Key() {
+						case tcell.KeyEscape:
+							ui.app.SetRoot(ui.frame, true)
+							return nil
+						}
+						return event
+					})
+
+					// Show the track list
+					ui.app.SetRoot(trackList, true)
+					return
 				}
 			}
 		}
@@ -581,15 +551,43 @@ func (ui *ResultsUI) displayDetails(row int) {
 	// Add buttons to the modal
 	buttons := []string{"Open in Spotify", "Close"}
 
-	// Add "Return to Menu" button if returnToMenu function is set
-	if ui.returnToMenu != nil {
-		buttons = []string{"Open in Spotify", "Close", "Return to Menu"}
+	// Add "Play" button if the item can be played
+	if canPlay {
+		buttons = []string{"Play", "Open in Spotify", "Close"}
 	}
 
-	modal.SetText(text).
+	// Add "Return to Menu" button if returnToMenu function is set
+	if ui.returnToMenu != nil {
+		if canPlay {
+			buttons = []string{"Play", "Open in Spotify", "Close", "Return to Menu"}
+		} else {
+			buttons = []string{"Open in Spotify", "Close", "Return to Menu"}
+		}
+	}
+
+	// Create a modal
+	modal := tview.NewModal().
+		SetText(text).
 		AddButtons(buttons).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-			if buttonIndex == 0 && spotifyLink != "" {
+			// Handle button click based on index
+			switch buttonLabel {
+			case "Play":
+				// Stop the current application
+				ui.app.Stop()
+
+				// Create a new player UI for the selected track
+				playerUI := NewPlayerUI(ui.ctx, ui.client, *selectedTrack)
+
+				// Set up the return to results function if needed
+				if ui.returnToMenu != nil {
+					playerUI.SetReturnToMenuFunction(ui.returnToMenu)
+				}
+
+				// Start playback
+				playerUI.Play()
+
+			case "Open in Spotify":
 				// Try to open the link in the default browser
 				err := openURL(spotifyLink)
 				if err != nil {
@@ -611,16 +609,15 @@ func (ui *ResultsUI) displayDetails(row int) {
 						})
 					ui.app.SetRoot(infoModal, true)
 				}
-			} else if buttonIndex == 2 && ui.returnToMenu != nil {
-				// Return to the main menu
+			case "Return to Menu":
 				ui.app.Stop()
 				ui.returnToMenu()
-			} else {
+			case "Close":
 				ui.app.SetRoot(ui.frame, true)
 			}
 		})
 
-	// Display the modal
+	// Show the modal
 	ui.app.SetRoot(modal, true)
 }
 
