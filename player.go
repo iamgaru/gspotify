@@ -16,19 +16,20 @@ import (
 
 // PlayerUI represents a UI for playing tracks and displaying track info
 type PlayerUI struct {
-	app           *tview.Application
-	flex          *tview.Flex
-	progressBar   *tview.TextView
-	infoText      *tview.TextView
-	imageView     *tview.TextView
-	track         spotify.FullTrack
-	client        *spotify.Client
-	ctx           context.Context
-	returnToMenu  func()
-	timer         *time.Timer
-	startTime     time.Time
-	isPlaying     bool
-	totalDuration time.Duration
+	app            *tview.Application
+	flex           *tview.Flex
+	progressBar    *tview.TextView
+	infoText       *tview.TextView
+	imageView      *tview.TextView
+	track          spotify.FullTrack
+	client         *spotify.Client
+	ctx            context.Context
+	returnToMenu   func()
+	timer          *time.Timer
+	startTime      time.Time
+	isPlaying      bool
+	totalDuration  time.Duration
+	pausedPosition time.Duration // Add a field to store the paused position
 }
 
 // NewPlayerUI creates a new player UI
@@ -214,6 +215,12 @@ func (p *PlayerUI) startPlayback() {
 			URIs: []spotify.URI{p.track.URI},
 		}
 
+		// If we have a paused position, set the position_ms parameter to resume from that point
+		if p.pausedPosition > 0 {
+			positionMs := spotify.Numeric(p.pausedPosition.Milliseconds())
+			playOpts.PositionMs = positionMs
+		}
+
 		// If we have a device ID, specify it
 		if deviceID != "" {
 			playOpts.DeviceID = &deviceID
@@ -229,8 +236,14 @@ func (p *PlayerUI) startPlayback() {
 		}
 	}()
 
+	// If we're resuming from a paused state, adjust the startTime to account for the previous playback
+	if p.pausedPosition > 0 {
+		p.startTime = time.Now().Add(-p.pausedPosition)
+	} else {
+		p.startTime = time.Now()
+	}
+
 	p.isPlaying = true
-	p.startTime = time.Now()
 
 	// Start a timer to update the progress bar every second
 	if p.timer != nil {
@@ -268,6 +281,9 @@ func (p *PlayerUI) pausePlayback() {
 			return
 		}
 	}()
+
+	// Store the current position when pausing
+	p.pausedPosition = time.Since(p.startTime)
 
 	p.isPlaying = false
 	if p.timer != nil {
