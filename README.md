@@ -1,7 +1,7 @@
 # GSpotify CLI
 
 <p align="center">
-  <img src="gs-gopher.webp" alt="GSpotify Gopher" width="300">
+  <img src="gs-gopher.png" alt="GSpotify Gopher" width="300">
 </p>
 
 A simple command-line interface for searching and playing Spotify tracks, albums, and playlists.
