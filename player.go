@@ -3,9 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	_ "image/jpeg"
-	_ "image/png"
-	"net/http"
 	"strings"
 	"time"
 
@@ -20,7 +17,6 @@ type PlayerUI struct {
 	flex           *tview.Flex
 	progressBar    *tview.TextView
 	infoText       *tview.TextView
-	imageView      *tview.TextView
 	track          spotify.FullTrack
 	client         *spotify.Client
 	ctx            context.Context
@@ -41,15 +37,11 @@ func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.Full
 	infoText := tview.NewTextView().
 		SetDynamicColors(true).
 		SetTextAlign(tview.AlignLeft)
-	imageView := tview.NewTextView().
-		SetDynamicColors(true).
-		SetTextAlign(tview.AlignCenter)
 
 	playerUI := &PlayerUI{
 		app:           app,
 		progressBar:   progressBar,
 		infoText:      infoText,
-		imageView:     imageView,
 		track:         track,
 		client:        client,
 		ctx:           ctx,
@@ -59,7 +51,6 @@ func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.Full
 	// Create layout
 	flex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(imageView, 0, 10, false).
 		AddItem(infoText, 0, 3, false).
 		AddItem(progressBar, 1, 0, false)
 
@@ -96,7 +87,6 @@ func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.Full
 
 	// Prepare player UI
 	playerUI.updateInfoText()
-	playerUI.updateArtwork()
 
 	return playerUI
 }
@@ -118,52 +108,6 @@ func (p *PlayerUI) updateInfoText() {
 	)
 
 	p.infoText.SetText(info)
-}
-
-// updateArtwork attempts to display album artwork in ASCII form
-func (p *PlayerUI) updateArtwork() {
-	if len(p.track.Album.Images) > 0 {
-		// Get the medium size image URL
-		imageURL := p.track.Album.Images[0].URL
-		if len(p.track.Album.Images) > 1 {
-			imageURL = p.track.Album.Images[1].URL
-		}
-
-		go func() {
-			asciiArt := fetchAndConvertToAscii(imageURL)
-			p.app.QueueUpdateDraw(func() {
-				p.imageView.SetText(asciiArt)
-			})
-		}()
-	}
-}
-
-// fetchAndConvertToAscii fetches an image from a URL and converts it to ASCII art
-func fetchAndConvertToAscii(url string) string {
-	// Fetch the image
-	resp, err := http.Get(url)
-	if err != nil {
-		return fmt.Sprintf("[red]Error fetching image: %v[white]", err)
-	}
-	defer resp.Body.Close()
-
-	// For now, return a placeholder
-	return `[yellow]
-    _____________________
-   /                     \
-  |       ALBUM ART       |
-  |                       |
-  |      ___________      |
-  |     /           \     |
-  |    |     ♫      |     |
-  |    |    ♫ ♫     |     |
-  |    |   ♫   ♫    |     |
-  |    |     ♫      |     |
-  |     \___________/     |
-  |                       |
-  |                       |
-   \_____________________/
-   [white]`
 }
 
 // Play starts the playback UI
