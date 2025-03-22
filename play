@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# play - A simple alias script for gspotify auto-play functionality
+# Usage: play "query"
+
+# Check if a query was provided
+if [ $# -eq 0 ]; then
+  echo "Usage: play \"query\""
+  echo "Example: play \"Bohemian Rhapsody\""
+  exit 1
+fi
+
+# Combine all arguments into a single query string
+QUERY="$*"
+
+# Path to the gspotify executable
+# You should modify this path to point to your gspotify executable
+GSPOTIFY_PATH="$HOME/go/src/github.com/iamgaru/gspotify/gspotify"
+
+# Check if the gspotify executable exists
+if [ ! -f "$GSPOTIFY_PATH" ]; then
+  # If not found at the specified path, try using 'which' to find it
+  GSPOTIFY_PATH=$(which gspotify 2>/dev/null)
+  
+  if [ -z "$GSPOTIFY_PATH" ]; then
+    echo "Error: gspotify executable not found."
+    echo "Please modify the GSPOTIFY_PATH in this script to point to your gspotify executable."
+    exit 1
+  fi
+fi
+
+# Run gspotify with the auto-play flag and the provided query
+"$GSPOTIFY_PATH" -t track -q "$QUERY" -p -k
+
+# The -p flag enables auto-play (plays the first match and exits)
+# The -k flag enables keep-playing (continues playing after exiting)
+
+echo "Requested to play: $QUERY"
+echo "Music will continue playing in the background." 

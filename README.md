@@ -216,3 +216,39 @@ When the `-d` flag is used or "Show Detailed Results" is selected in interactive
 - You need to obtain your own Spotify API credentials from the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/).
 - **First-time Authorization**: When you first use the application, you will be prompted to authorize it to play Spotify tracks. A browser window will open automatically, and you'll need to log in to your Spotify account and approve the requested permissions. This authorization only happens once, and the app will save your credentials for future use.
 - Music playback requires an active Spotify device (such as the Spotify desktop app or web player). 
+
+## Quick Play Script
+
+For a more convenient way to play music, you can use the included "play" bash script:
+
+### Installation
+
+1. Make the script executable:
+   ```
+   chmod +x play
+   ```
+
+2. Move it to a directory in your PATH (optional):
+   ```
+   sudo mv play /usr/local/bin/
+   ```
+
+### Usage
+
+Simply run the script followed by your search query:
+```
+play Bohemian Rhapsody
+```
+
+This is equivalent to:
+```
+./gspotify -t track -q "Bohemian Rhapsody" -p -k
+```
+
+The script will:
+1. Search for the specified track
+2. Automatically play the first match (-p flag)
+3. Continue playing even after exiting (-k flag)
+4. Display a confirmation message
+
+The script is a convenient shorthand when you just want to quickly play a song without interacting with the search results. 
