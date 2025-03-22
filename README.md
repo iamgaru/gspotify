@@ -39,6 +39,8 @@ A simple command-line interface for searching and playing Spotify tracks, albums
    export SPOTIFY_SECRET=your_client_secret
    ```
 
+4. **Authorization**: On first use, you will be prompted to authorize the application to access your Spotify account. This is a one-time process where a browser window will open for you to sign in to Spotify and grant the necessary permissions.
+
 ## Usage
 
 ```
@@ -212,4 +214,5 @@ When the `-d` flag is used or "Show Detailed Results" is selected in interactive
 - The application uses client credentials flow for authentication, so it can only access public data.
 - The Spotify API has rate limits, so excessive usage may result in temporary blocks.
 - You need to obtain your own Spotify API credentials from the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/).
+- **First-time Authorization**: When you first use the application, you will be prompted to authorize it to play Spotify tracks. A browser window will open automatically, and you'll need to log in to your Spotify account and approve the requested permissions. This authorization only happens once, and the app will save your credentials for future use.
 - Music playback requires an active Spotify device (such as the Spotify desktop app or web player). 
