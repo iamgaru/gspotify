@@ -52,6 +52,7 @@ func main() {
 		interactive  = flag.Bool("i", false, "Run in interactive mode with a menu interface")
 		returnToMenu = flag.Bool("r", false, "Return to interactive menu after viewing search results")
 		keepPlaying  = flag.Bool("k", false, "Keep music playing when exiting the player interface")
+		autoPlay     = flag.Bool("p", false, "Automatically play the first result and exit")
 	)
 
 	// Add long flag alternatives (kept for backward compatibility but not documented)
@@ -63,11 +64,12 @@ func main() {
 	flag.BoolVar(interactive, "interactive", false, "")
 	flag.BoolVar(returnToMenu, "return-to-menu", false, "")
 	flag.BoolVar(keepPlaying, "keep-playing", false, "")
+	flag.BoolVar(autoPlay, "auto-play", false, "")
 
 	// Define usage information
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "A CLI tool to search Spotify for tracks, albums, and playlists.\n\n")
+		fmt.Fprintf(os.Stderr, "A CLI tool to search and play Spotify tracks, albums, and playlists.\n\n")
 		fmt.Fprintf(os.Stderr, "Options:\n")
 
 		// Only print flags that have descriptions (the single-letter flags)
@@ -102,6 +104,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  %s -i\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -q \"Bohemian Rhapsody\" -r\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -q \"Bohemian Rhapsody\" -k\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -q \"Bohemian Rhapsody\" -p\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -u spotify\n", os.Args[0])
 	}
 
@@ -146,20 +149,20 @@ func main() {
 	if *returnToMenu {
 		switch *searchType {
 		case "track":
-			searchTracksWithMenu(ctx, client, *searchQuery, *artistName, *limit, *showDetails, *keepPlaying)
+			searchTracksWithMenu(ctx, client, *searchQuery, *artistName, *limit, *showDetails, *keepPlaying, *autoPlay)
 		case "album":
-			searchAlbumsWithMenu(ctx, client, *searchQuery, *limit, *showDetails, *keepPlaying)
+			searchAlbumsWithMenu(ctx, client, *searchQuery, *limit, *showDetails, *keepPlaying, *autoPlay)
 		case "playlist":
-			searchPlaylistsWithMenu(ctx, client, *searchQuery, *limit, *showDetails, *keepPlaying)
+			searchPlaylistsWithMenu(ctx, client, *searchQuery, *limit, *showDetails, *keepPlaying, *autoPlay)
 		}
 	} else {
 		switch *searchType {
 		case "track":
-			searchTracks(ctx, client, *searchQuery, *artistName, *limit, *showDetails, *keepPlaying)
+			searchTracks(ctx, client, *searchQuery, *artistName, *limit, *showDetails, *keepPlaying, *autoPlay)
 		case "album":
-			searchAlbums(ctx, client, *searchQuery, *limit, *showDetails, *keepPlaying)
+			searchAlbums(ctx, client, *searchQuery, *limit, *showDetails, *keepPlaying, *autoPlay)
 		case "playlist":
-			searchPlaylists(ctx, client, *searchQuery, *limit, *showDetails, *keepPlaying)
+			searchPlaylists(ctx, client, *searchQuery, *limit, *showDetails, *keepPlaying, *autoPlay)
 		}
 	}
 }

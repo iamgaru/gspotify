@@ -347,7 +347,7 @@ func (ui *ResultsUI) displayDetails(row int) {
 											ui.app.Stop()
 
 											// Create a new player UI for the selected track
-											playerUI := NewPlayerUI(ui.ctx, ui.client, *fullTrack, ui.keepPlaying)
+											playerUI := NewPlayerUI(ui.ctx, ui.client, *fullTrack, ui.keepPlaying, false)
 
 											// Set up the return to results function if needed
 											if ui.returnToMenu != nil {
@@ -479,7 +479,7 @@ func (ui *ResultsUI) displayDetails(row int) {
 												ui.app.Stop()
 
 												// Create a new player UI for the selected track
-												playerUI := NewPlayerUI(ui.ctx, ui.client, t, ui.keepPlaying)
+												playerUI := NewPlayerUI(ui.ctx, ui.client, t, ui.keepPlaying, false)
 
 												// Set up the return to results function if needed
 												if ui.returnToMenu != nil {
@@ -579,7 +579,7 @@ func (ui *ResultsUI) displayDetails(row int) {
 				ui.app.Stop()
 
 				// Create a new player UI for the selected track
-				playerUI := NewPlayerUI(ui.ctx, ui.client, *selectedTrack, ui.keepPlaying)
+				playerUI := NewPlayerUI(ui.ctx, ui.client, *selectedTrack, ui.keepPlaying, false)
 
 				// Set up the return to results function if needed
 				if ui.returnToMenu != nil {

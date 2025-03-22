@@ -1,6 +1,6 @@
 # GSpotify CLI
 
-A simple command-line interface for searching Spotify's catalog for tracks, albums, and playlists, and playing music.
+A simple command-line interface for searching and playing Spotify tracks, albums, and playlists.
 
 ## Features
 
@@ -53,6 +53,7 @@ A simple command-line interface for searching Spotify's catalog for tracks, albu
 | `-i` | Run in interactive mode with a menu interface | false |
 | `-r` | Return to interactive menu after viewing search results | false |
 | `-k` | Keep music playing when exiting the player interface | false |
+| `-p` | Automatically play the first result and exit | false |
 | `-u` | Spotify user ID to look up profile information | Optional |
 
 ### Examples
@@ -106,6 +107,16 @@ Search and return to menu:
 Play music and keep it playing when exiting the player:
 ```
 ./gspotify -q "Bohemian Rhapsody" -k
+```
+
+Automatically play the first result:
+```
+./gspotify -q "Bohemian Rhapsody" -p
+```
+
+Automatically play the first result and continue playing after exit:
+```
+./gspotify -q "Bohemian Rhapsody" -p -k
 ```
 
 #### Combined Options

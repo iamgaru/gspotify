@@ -27,10 +27,11 @@ type PlayerUI struct {
 	totalDuration  time.Duration
 	pausedPosition time.Duration // Add a field to store the paused position
 	keepPlaying    bool          // Flag to determine if music should keep playing when exiting
+	autoQuit       bool          // Flag to immediately exit after starting playback
 }
 
 // NewPlayerUI creates a new player UI
-func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.FullTrack, keepPlaying bool) *PlayerUI {
+func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.FullTrack, keepPlaying bool, autoQuit bool) *PlayerUI {
 	app := tview.NewApplication()
 	progressBar := tview.NewTextView().
 		SetDynamicColors(true).
@@ -48,6 +49,7 @@ func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.Full
 		ctx:           ctx,
 		totalDuration: time.Duration(track.Duration) * time.Millisecond,
 		keepPlaying:   keepPlaying, // Use the provided value instead of hardcoded default
+		autoQuit:      autoQuit,    // Set the auto-quit flag
 	}
 
 	// Create layout
@@ -129,7 +131,38 @@ func (p *PlayerUI) updateInfoText() {
 
 // Play starts the playback UI
 func (p *PlayerUI) Play() {
-	p.startPlayback()
+	// Start playback and get the result channel
+	resultCh := p.startPlayback()
+
+	// If autoQuit is enabled, print a message and return without starting the UI
+	if p.autoQuit {
+		artists := make([]string, len(p.track.Artists))
+		for i, artist := range p.track.Artists {
+			artists[i] = artist.Name
+		}
+
+		fmt.Printf("Now playing: %s by %s from the album %s\n",
+			p.track.Name,
+			strings.Join(artists, ", "),
+			p.track.Album.Name)
+		fmt.Println("Waiting for playback to start...")
+
+		// Wait for playback to start or error to occur
+		// Add a timeout to prevent hanging indefinitely
+		select {
+		case err := <-resultCh:
+			if err != nil {
+				fmt.Printf("Error: %v\n", err)
+				return
+			}
+			fmt.Println("Playback started. The application will exit but music will continue playing.")
+		case <-time.After(10 * time.Second):
+			fmt.Println("Timed out waiting for playback to start. The Spotify client may still begin playback shortly.")
+		}
+		return
+	}
+
+	// Otherwise, display the player UI
 	p.app.SetRoot(p.flex, true).EnableMouse(true)
 	if err := p.app.Run(); err != nil {
 		fmt.Printf("Error running player UI: %v\n", err)
@@ -137,23 +170,32 @@ func (p *PlayerUI) Play() {
 }
 
 // startPlayback starts track playback
-func (p *PlayerUI) startPlayback() {
+func (p *PlayerUI) startPlayback() chan error {
+	// Create a channel to signal when playback has started or encountered an error
+	resultCh := make(chan error, 1)
+
 	// Start playback using Spotify Web API instead of opening URI
 	go func() {
 		// Get available devices first
 		devices, err := p.client.PlayerDevices(p.ctx)
 		if err != nil {
-			p.app.QueueUpdateDraw(func() {
-				p.progressBar.SetText(fmt.Sprintf("[red]Error getting devices: %v[white]", err))
-			})
+			if p.app != nil {
+				p.app.QueueUpdateDraw(func() {
+					p.progressBar.SetText(fmt.Sprintf("[red]Error getting devices: %v[white]", err))
+				})
+			}
+			resultCh <- fmt.Errorf("error getting devices: %v", err)
 			return
 		}
 
 		// Check if there are any active devices
 		if len(devices) == 0 {
-			p.app.QueueUpdateDraw(func() {
-				p.progressBar.SetText("[red]No active Spotify devices found. Please open Spotify on any device first.[white]")
-			})
+			if p.app != nil {
+				p.app.QueueUpdateDraw(func() {
+					p.progressBar.SetText("[red]No active Spotify devices found. Please open Spotify on any device first.[white]")
+				})
+			}
+			resultCh <- fmt.Errorf("no active Spotify devices found")
 			return
 		}
 
@@ -190,11 +232,17 @@ func (p *PlayerUI) startPlayback() {
 		// Start playback on the device
 		err = p.client.PlayOpt(p.ctx, playOpts)
 		if err != nil {
-			p.app.QueueUpdateDraw(func() {
-				p.progressBar.SetText(fmt.Sprintf("[red]Error starting playback: %v[white]", err))
-			})
+			if p.app != nil {
+				p.app.QueueUpdateDraw(func() {
+					p.progressBar.SetText(fmt.Sprintf("[red]Error starting playback: %v[white]", err))
+				})
+			}
+			resultCh <- fmt.Errorf("error starting playback: %v", err)
 			return
 		}
+
+		// Signal that playback has started successfully
+		resultCh <- nil
 	}()
 
 	// If we're resuming from a paused state, adjust the startTime to account for the previous playback
@@ -228,6 +276,8 @@ func (p *PlayerUI) startPlayback() {
 			p.timer.Reset(time.Second)
 		}
 	}()
+
+	return resultCh
 }
 
 // pausePlayback pauses the current playback
