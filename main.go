@@ -8,7 +8,40 @@ import (
 	"golang.org/x/net/context"
 )
 
+// checkEnvironmentVariables verifies that required Spotify API credentials are set
+func checkEnvironmentVariables() {
+	clientID := os.Getenv("SPOTIFY_ID")
+	clientSecret := os.Getenv("SPOTIFY_SECRET")
+
+	if clientID == "" || clientSecret == "" {
+		fmt.Println("=================================================================")
+		fmt.Println("ERROR: Spotify API credentials not properly configured")
+		fmt.Println("=================================================================")
+
+		if clientID == "" {
+			fmt.Println("Missing SPOTIFY_ID environment variable")
+		}
+
+		if clientSecret == "" {
+			fmt.Println("Missing SPOTIFY_SECRET environment variable")
+		}
+
+		fmt.Println("\nTo set up your credentials:")
+		fmt.Println("1. Go to https://developer.spotify.com/dashboard/")
+		fmt.Println("2. Log in and create a new app")
+		fmt.Println("3. Set the redirect URI to http://localhost:8888/callback in your app settings")
+		fmt.Println("4. Set these environment variables with your credentials:")
+		fmt.Println("   export SPOTIFY_ID=your_client_id")
+		fmt.Println("   export SPOTIFY_SECRET=your_client_secret")
+		fmt.Println("=================================================================")
+		os.Exit(1)
+	}
+}
+
 func main() {
+	// Check environment variables first
+	checkEnvironmentVariables()
+
 	// Define command line flags
 	var (
 		searchType   = flag.String("t", "track", "Type of search: track, album, or playlist")
@@ -18,6 +51,8 @@ func main() {
 		showDetails  = flag.Bool("d", false, "Show detailed information about the results")
 		interactive  = flag.Bool("i", false, "Run in interactive mode with a menu interface")
 		returnToMenu = flag.Bool("r", false, "Return to interactive menu after viewing search results")
+		keepPlaying  = flag.Bool("k", false, "Keep music playing when exiting the player interface")
+		autoPlay     = flag.Bool("p", false, "Automatically play the first result and exit")
 	)
 
 	// Add long flag alternatives (kept for backward compatibility but not documented)
@@ -28,11 +63,13 @@ func main() {
 	flag.BoolVar(showDetails, "details", false, "")
 	flag.BoolVar(interactive, "interactive", false, "")
 	flag.BoolVar(returnToMenu, "return-to-menu", false, "")
+	flag.BoolVar(keepPlaying, "keep-playing", false, "")
+	flag.BoolVar(autoPlay, "auto-play", false, "")
 
 	// Define usage information
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "A CLI tool to search Spotify for tracks, albums, and playlists.\n\n")
+		fmt.Fprintf(os.Stderr, "A CLI tool to search and play Spotify tracks, albums, and playlists.\n\n")
 		fmt.Fprintf(os.Stderr, "Options:\n")
 
 		// Only print flags that have descriptions (the single-letter flags)
@@ -66,6 +103,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  %s -t playlist -q \"workout\" -d\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -i\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -q \"Bohemian Rhapsody\" -r\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -q \"Bohemian Rhapsody\" -k\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -q \"Bohemian Rhapsody\" -p\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -u spotify\n", os.Args[0])
 	}
 
@@ -79,6 +118,7 @@ func main() {
 	if *interactive {
 		// Start interactive menu
 		menu := NewInteractiveMenu(ctx, client)
+		menu.SetKeepPlayingFlag(*keepPlaying)
 		if err := menu.Run(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error running interactive menu: %v\n", err)
 		}
@@ -109,20 +149,20 @@ func main() {
 	if *returnToMenu {
 		switch *searchType {
 		case "track":
-			searchTracksWithMenu(ctx, client, *searchQuery, *artistName, *limit, *showDetails)
+			searchTracksWithMenu(ctx, client, *searchQuery, *artistName, *limit, *showDetails, *keepPlaying, *autoPlay)
 		case "album":
-			searchAlbumsWithMenu(ctx, client, *searchQuery, *limit, *showDetails)
+			searchAlbumsWithMenu(ctx, client, *searchQuery, *limit, *showDetails, *keepPlaying, *autoPlay)
 		case "playlist":
-			searchPlaylistsWithMenu(ctx, client, *searchQuery, *limit, *showDetails)
+			searchPlaylistsWithMenu(ctx, client, *searchQuery, *limit, *showDetails, *keepPlaying, *autoPlay)
 		}
 	} else {
 		switch *searchType {
 		case "track":
-			searchTracks(ctx, client, *searchQuery, *artistName, *limit, *showDetails)
+			searchTracks(ctx, client, *searchQuery, *artistName, *limit, *showDetails, *keepPlaying, *autoPlay)
 		case "album":
-			searchAlbums(ctx, client, *searchQuery, *limit, *showDetails)
+			searchAlbums(ctx, client, *searchQuery, *limit, *showDetails, *keepPlaying, *autoPlay)
 		case "playlist":
-			searchPlaylists(ctx, client, *searchQuery, *limit, *showDetails)
+			searchPlaylists(ctx, client, *searchQuery, *limit, *showDetails, *keepPlaying, *autoPlay)
 		}
 	}
 }
