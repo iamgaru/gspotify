@@ -51,6 +51,7 @@ func main() {
 		showDetails  = flag.Bool("d", false, "Show detailed information about the results")
 		interactive  = flag.Bool("i", false, "Run in interactive mode with a menu interface")
 		returnToMenu = flag.Bool("r", false, "Return to interactive menu after viewing search results")
+		keepPlaying  = flag.Bool("k", false, "Keep music playing when exiting the player interface")
 	)
 
 	// Add long flag alternatives (kept for backward compatibility but not documented)
@@ -61,6 +62,7 @@ func main() {
 	flag.BoolVar(showDetails, "details", false, "")
 	flag.BoolVar(interactive, "interactive", false, "")
 	flag.BoolVar(returnToMenu, "return-to-menu", false, "")
+	flag.BoolVar(keepPlaying, "keep-playing", false, "")
 
 	// Define usage information
 	flag.Usage = func() {
@@ -99,6 +101,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  %s -t playlist -q \"workout\" -d\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -i\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -q \"Bohemian Rhapsody\" -r\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -q \"Bohemian Rhapsody\" -k\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -u spotify\n", os.Args[0])
 	}
 
@@ -112,6 +115,7 @@ func main() {
 	if *interactive {
 		// Start interactive menu
 		menu := NewInteractiveMenu(ctx, client)
+		menu.SetKeepPlayingFlag(*keepPlaying)
 		if err := menu.Run(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error running interactive menu: %v\n", err)
 		}
@@ -142,20 +146,20 @@ func main() {
 	if *returnToMenu {
 		switch *searchType {
 		case "track":
-			searchTracksWithMenu(ctx, client, *searchQuery, *artistName, *limit, *showDetails)
+			searchTracksWithMenu(ctx, client, *searchQuery, *artistName, *limit, *showDetails, *keepPlaying)
 		case "album":
-			searchAlbumsWithMenu(ctx, client, *searchQuery, *limit, *showDetails)
+			searchAlbumsWithMenu(ctx, client, *searchQuery, *limit, *showDetails, *keepPlaying)
 		case "playlist":
-			searchPlaylistsWithMenu(ctx, client, *searchQuery, *limit, *showDetails)
+			searchPlaylistsWithMenu(ctx, client, *searchQuery, *limit, *showDetails, *keepPlaying)
 		}
 	} else {
 		switch *searchType {
 		case "track":
-			searchTracks(ctx, client, *searchQuery, *artistName, *limit, *showDetails)
+			searchTracks(ctx, client, *searchQuery, *artistName, *limit, *showDetails, *keepPlaying)
 		case "album":
-			searchAlbums(ctx, client, *searchQuery, *limit, *showDetails)
+			searchAlbums(ctx, client, *searchQuery, *limit, *showDetails, *keepPlaying)
 		case "playlist":
-			searchPlaylists(ctx, client, *searchQuery, *limit, *showDetails)
+			searchPlaylists(ctx, client, *searchQuery, *limit, *showDetails, *keepPlaying)
 		}
 	}
 }

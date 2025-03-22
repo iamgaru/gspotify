@@ -1,6 +1,6 @@
 # GSpotify CLI
 
-A simple command-line interface for searching Spotify's catalog for tracks, albums, and playlists.
+A simple command-line interface for searching Spotify's catalog for tracks, albums, and playlists, and playing music.
 
 ## Features
 
@@ -13,6 +13,8 @@ A simple command-line interface for searching Spotify's catalog for tracks, albu
 - Return to menu option after viewing search results
 - Simple single-letter flags for easy command usage
 - User profile lookup functionality
+- Built-in music player with playback controls
+- Keep music playing option even after exiting the player interface
 
 ## Installation
 
@@ -50,6 +52,7 @@ A simple command-line interface for searching Spotify's catalog for tracks, albu
 | `-d` | Show detailed information about the results | false |
 | `-i` | Run in interactive mode with a menu interface | false |
 | `-r` | Return to interactive menu after viewing search results | false |
+| `-k` | Keep music playing when exiting the player interface | false |
 | `-u` | Spotify user ID to look up profile information | Optional |
 
 ### Examples
@@ -100,6 +103,11 @@ Search and return to menu:
 ./gspotify -q "Bohemian Rhapsody" -r
 ```
 
+Play music and keep it playing when exiting the player:
+```
+./gspotify -q "Bohemian Rhapsody" -k
+```
+
 #### Combined Options
 
 Search for Queen albums with detailed information:
@@ -131,6 +139,45 @@ When running in interactive mode, the application presents a user-friendly form 
 
 After submitting the form, the search results will be displayed in the same tabular format as the non-interactive mode.
 
+### Playing Music
+
+In interactive mode, you can play music by:
+
+1. Searching for tracks (choose "track" as the search type)
+2. Selecting a track from the search results
+3. Clicking "Play" on the track details screen
+
+You'll then be taken to the player interface where you can control playback.
+
+## Music Player Controls
+
+When playing a track, the player interface provides the following controls:
+
+| Key | Function |
+|-----|----------|
+| Space | Play/Pause the current track |
+| k | Toggle "Keep Playing" mode (ON/OFF) |
+| Esc | Return to the previous menu |
+
+### Keep Playing Mode
+
+The "Keep Playing" feature allows you to continue listening to the current track even after exiting the player interface. This is useful when you want to continue browsing or searching while the music plays.
+
+To use this feature:
+1. While in the player interface, press `k` to toggle "Keep Playing" mode ON
+2. The status will be displayed in the player interface
+3. Press Esc to return to the menu while music continues playing
+4. To stop playback later, return to the player interface and press Space to pause
+
+Example workflow:
+```
+1. Search for a track in interactive mode
+2. Select a track to play
+3. In the player interface, press 'k' to enable Keep Playing
+4. Press Esc to return to the menu while music continues
+5. Continue browsing or searching while listening
+```
+
 ## Output
 
 The application displays results in a tabular format with relevant information for each type of search:
@@ -149,4 +196,5 @@ When the `-d` flag is used or "Show Detailed Results" is selected in interactive
 
 - The application uses client credentials flow for authentication, so it can only access public data.
 - The Spotify API has rate limits, so excessive usage may result in temporary blocks.
-- You need to obtain your own Spotify API credentials from the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/). 
+- You need to obtain your own Spotify API credentials from the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/).
+- Music playback requires an active Spotify device (such as the Spotify desktop app or web player). 

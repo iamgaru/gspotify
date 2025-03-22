@@ -26,10 +26,11 @@ type PlayerUI struct {
 	isPlaying      bool
 	totalDuration  time.Duration
 	pausedPosition time.Duration // Add a field to store the paused position
+	keepPlaying    bool          // Flag to determine if music should keep playing when exiting
 }
 
 // NewPlayerUI creates a new player UI
-func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.FullTrack) *PlayerUI {
+func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.FullTrack, keepPlaying bool) *PlayerUI {
 	app := tview.NewApplication()
 	progressBar := tview.NewTextView().
 		SetDynamicColors(true).
@@ -46,6 +47,7 @@ func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.Full
 		client:        client,
 		ctx:           ctx,
 		totalDuration: time.Duration(track.Duration) * time.Millisecond,
+		keepPlaying:   keepPlaying, // Use the provided value instead of hardcoded default
 	}
 
 	// Create layout
@@ -64,7 +66,10 @@ func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.Full
 	flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape, tcell.KeyCtrlC:
-			playerUI.stopPlayback()
+			// Only stop playback if keepPlaying is false
+			if !playerUI.keepPlaying {
+				playerUI.stopPlayback()
+			}
 			if playerUI.returnToMenu != nil {
 				app.Stop()
 				playerUI.returnToMenu()
@@ -80,6 +85,12 @@ func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.Full
 			} else {
 				playerUI.startPlayback()
 			}
+		}
+
+		// Handle 'k' key to toggle keep playing mode
+		if event.Rune() == 'k' {
+			playerUI.keepPlaying = !playerUI.keepPlaying
+			playerUI.updateInfoText()
 		}
 
 		return event
@@ -98,13 +109,19 @@ func (p *PlayerUI) updateInfoText() {
 		artists[i] = artist.Name
 	}
 
+	keepPlayingStatus := "OFF"
+	if p.keepPlaying {
+		keepPlayingStatus = "ON"
+	}
+
 	info := fmt.Sprintf(
 		"[green]Track:[white] %s\n[green]Artists:[white] %s\n[green]Album:[white] %s\n[green]Release Date:[white] %s\n\n"+
-			"[yellow]Press Space to play/pause. Press Esc to return.[white]",
+			"[yellow]Press Space to play/pause. Press 'k' to toggle keep playing (%s). Press Esc to return.[white]",
 		p.track.Name,
 		strings.Join(artists, ", "),
 		p.track.Album.Name,
 		p.track.Album.ReleaseDate,
+		keepPlayingStatus,
 	)
 
 	p.infoText.SetText(info)
@@ -237,6 +254,15 @@ func (p *PlayerUI) pausePlayback() {
 
 // stopPlayback stops the current playback
 func (p *PlayerUI) stopPlayback() {
+	// Actually stop the playback using Spotify API
+	go func() {
+		err := p.client.Pause(p.ctx)
+		if err != nil {
+			// Just log the error, don't need to display as we're exiting anyway
+			fmt.Printf("Error stopping playback: %v\n", err)
+		}
+	}()
+
 	p.isPlaying = false
 	if p.timer != nil {
 		p.timer.Stop()

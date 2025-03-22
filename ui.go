@@ -38,6 +38,7 @@ type ResultsUI struct {
 	client       *spotify.Client
 	ctx          context.Context
 	showDetails  bool
+	keepPlaying  bool   // Whether to keep music playing when exiting player
 	returnToMenu func() // Function to return to the main menu
 }
 
@@ -55,6 +56,7 @@ func NewResultsUI(resultType string, ctx context.Context, client *spotify.Client
 		client:      client,
 		ctx:         ctx,
 		showDetails: showDetails,
+		keepPlaying: false, // Default to false
 	}
 
 	// Set up key bindings
@@ -345,7 +347,7 @@ func (ui *ResultsUI) displayDetails(row int) {
 											ui.app.Stop()
 
 											// Create a new player UI for the selected track
-											playerUI := NewPlayerUI(ui.ctx, ui.client, *fullTrack)
+											playerUI := NewPlayerUI(ui.ctx, ui.client, *fullTrack, ui.keepPlaying)
 
 											// Set up the return to results function if needed
 											if ui.returnToMenu != nil {
@@ -477,7 +479,7 @@ func (ui *ResultsUI) displayDetails(row int) {
 												ui.app.Stop()
 
 												// Create a new player UI for the selected track
-												playerUI := NewPlayerUI(ui.ctx, ui.client, t)
+												playerUI := NewPlayerUI(ui.ctx, ui.client, t, ui.keepPlaying)
 
 												// Set up the return to results function if needed
 												if ui.returnToMenu != nil {
@@ -577,7 +579,7 @@ func (ui *ResultsUI) displayDetails(row int) {
 				ui.app.Stop()
 
 				// Create a new player UI for the selected track
-				playerUI := NewPlayerUI(ui.ctx, ui.client, *selectedTrack)
+				playerUI := NewPlayerUI(ui.ctx, ui.client, *selectedTrack, ui.keepPlaying)
 
 				// Set up the return to results function if needed
 				if ui.returnToMenu != nil {
@@ -629,7 +631,12 @@ func formatDuration(ms spotify.Numeric) string {
 	return fmt.Sprintf("%d:%02d", minutes, seconds)
 }
 
-// SetReturnToMenuFunction sets the function to be called to return to the main menu
+// SetKeepPlayingFlag sets the keepPlaying flag
+func (ui *ResultsUI) SetKeepPlayingFlag(keepPlaying bool) {
+	ui.keepPlaying = keepPlaying
+}
+
+// SetReturnToMenuFunction sets the function to return to the main menu
 func (ui *ResultsUI) SetReturnToMenuFunction(returnFunc func()) {
 	ui.returnToMenu = returnFunc
 }
