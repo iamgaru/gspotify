@@ -252,3 +252,13 @@ The script will:
 4. Display a confirmation message
 
 The script is a convenient shorthand when you just want to quickly play a song without interacting with the search results. 
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Author & Version
+
+**Author:** Nick Conolly  
+**Version:** 0.0.2  
+**GitHub:** [https://github.com/iamgaru](https://github.com/iamgaru) 
