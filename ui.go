@@ -481,6 +481,19 @@ func (ui *ResultsUI) displayDetails(row int) {
 												// Create a new player UI for the selected track
 												playerUI := NewPlayerUI(ui.ctx, ui.client, t, ui.keepPlaying, false)
 
+												// If we're in playlist mode, set the playlist tracks
+												if ui.resultType == "playlist" {
+													playlists := ui.results.([]spotify.SimplePlaylist)
+													if row-1 < len(playlists) {
+														playlist := playlists[row-1]
+														// Get the full playlist with tracks
+														fullPlaylist, err := ui.client.GetPlaylist(ui.ctx, playlist.ID)
+														if err == nil && fullPlaylist != nil {
+															playerUI.SetPlaylistTracks(fullPlaylist.Tracks.Tracks)
+														}
+													}
+												}
+
 												// Set up the return to results function if needed
 												if ui.returnToMenu != nil {
 													playerUI.SetReturnToMenuFunction(ui.returnToMenu)
@@ -580,6 +593,19 @@ func (ui *ResultsUI) displayDetails(row int) {
 
 				// Create a new player UI for the selected track
 				playerUI := NewPlayerUI(ui.ctx, ui.client, *selectedTrack, ui.keepPlaying, false)
+
+				// If we're in playlist mode, set the playlist tracks
+				if ui.resultType == "playlist" {
+					playlists := ui.results.([]spotify.SimplePlaylist)
+					if row-1 < len(playlists) {
+						playlist := playlists[row-1]
+						// Get the full playlist with tracks
+						fullPlaylist, err := ui.client.GetPlaylist(ui.ctx, playlist.ID)
+						if err == nil && fullPlaylist != nil {
+							playerUI.SetPlaylistTracks(fullPlaylist.Tracks.Tracks)
+						}
+					}
+				}
 
 				// Set up the return to results function if needed
 				if ui.returnToMenu != nil {
