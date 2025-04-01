@@ -119,6 +119,15 @@ func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.Full
 func (p *PlayerUI) SetPlaylistTracks(tracks []spotify.PlaylistTrack) {
 	p.playlistTracks = tracks
 	p.isPlaylistMode = true
+
+	// Find the index of the current track in the playlist
+	for i, track := range tracks {
+		if track.Track.ID == p.track.ID {
+			p.currentTrackIndex = i
+			break
+		}
+	}
+
 	p.updateInfoText()
 }
 
@@ -309,7 +318,16 @@ func (p *PlayerUI) startPlayback() chan error {
 			elapsed := time.Since(p.startTime)
 			if elapsed > p.totalDuration {
 				if p.isPlaylistMode {
-					p.playNextTrack()
+					if p.currentTrackIndex < len(p.playlistTracks)-1 {
+						p.playNextTrack()
+					} else if p.keepPlaying {
+						// If we're at the end of the playlist and keep playing is enabled,
+						// loop back to the beginning
+						p.currentTrackIndex = -1
+						p.playNextTrack()
+					} else {
+						p.stopPlayback()
+					}
 				} else {
 					p.stopPlayback()
 				}
