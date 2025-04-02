@@ -147,8 +147,18 @@ func (p *PlayerUI) SetPlaylistTracks(tracks []spotify.PlaylistTrack) {
 
 // playNextTrack plays the next track in the playlist
 func (p *PlayerUI) playNextTrack() {
-	if !p.isPlaylistMode || p.currentTrackIndex >= len(p.playlistTracks)-1 {
+	if !p.isPlaylistMode {
 		return
+	}
+
+	// If we're at the end of the playlist
+	if p.currentTrackIndex >= len(p.playlistTracks)-1 {
+		if p.keepPlaying {
+			// Loop back to the beginning
+			p.currentTrackIndex = -1
+		} else {
+			return
+		}
 	}
 
 	p.currentTrackIndex++
