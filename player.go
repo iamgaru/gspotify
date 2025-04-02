@@ -211,8 +211,18 @@ func (p *PlayerUI) SetAlbumTracks(tracks []spotify.SimpleTrack) {
 
 // playNextAlbumTrack plays the next track in the album
 func (p *PlayerUI) playNextAlbumTrack() {
-	if !p.isAlbumMode || p.currentTrackIndex >= len(p.albumTracks)-1 {
+	if !p.isAlbumMode {
 		return
+	}
+
+	// If we're at the end of the album
+	if p.currentTrackIndex >= len(p.albumTracks)-1 {
+		if p.keepPlaying {
+			// Loop back to the beginning
+			p.currentTrackIndex = -1
+		} else {
+			return
+		}
 	}
 
 	p.currentTrackIndex++
@@ -228,7 +238,7 @@ func (p *PlayerUI) playNextAlbumTrack() {
 	}
 
 	p.track = *fullTrack
-	p.totalDuration = time.Duration(nextTrack.Duration) * time.Millisecond
+	p.totalDuration = time.Duration(fullTrack.Duration) * time.Millisecond
 	p.pausedPosition = 0
 	p.startTime = time.Now()
 	p.updateInfoText()
@@ -417,6 +427,28 @@ func (p *PlayerUI) startPlayback() chan error {
 						// loop back to the beginning
 						p.currentTrackIndex = -1
 						p.playNextTrack()
+					} else {
+						p.stopPlayback()
+					}
+				} else if p.isSearchMode {
+					if p.currentTrackIndex < len(p.searchTracks)-1 {
+						p.playNextSearchTrack()
+					} else if p.keepPlaying {
+						// If we're at the end of the search results and keep playing is enabled,
+						// loop back to the beginning
+						p.currentTrackIndex = -1
+						p.playNextSearchTrack()
+					} else {
+						p.stopPlayback()
+					}
+				} else if p.isAlbumMode {
+					if p.currentTrackIndex < len(p.albumTracks)-1 {
+						p.playNextAlbumTrack()
+					} else if p.keepPlaying {
+						// If we're at the end of the album and keep playing is enabled,
+						// loop back to the beginning
+						p.currentTrackIndex = -1
+						p.playNextAlbumTrack()
 					} else {
 						p.stopPlayback()
 					}
