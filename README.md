@@ -278,3 +278,25 @@ This is equivalent to:
 ```
 ./gspotty -t track -q "Bohemian Rhapsody" -p -k
 ```
+
+The script will:
+1. Search for the specified track
+2. Automatically play the first match (-p flag)
+3. Continue playing even after exiting (-k flag)
+4. Display a confirmation message
+
+The script is a convenient shorthand when you just want to quickly play a song without interacting with the search results.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Author & Version
+
+```
++----------------+------------------+
+| Author         | Nick Conolly     |
+| Version        | 0.2.1            |
+| GitHub         | iamgaru          |
++----------------+------------------+
+```
