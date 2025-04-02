@@ -63,6 +63,7 @@ A simple command-line interface for searching and playing Spotify tracks, albums
 | `-k` | Keep music playing when exiting the player interface | false |
 | `-p` | Automatically play the first result and exit | false |
 | `-u` | Spotify user ID to look up profile information | Optional |
+| `-s` | Stop the currently playing track | false |
 
 ### Examples
 
@@ -110,6 +111,11 @@ Run in interactive mode:
 Search and return to menu:
 ```
 ./gspotify -q "Bohemian Rhapsody" -r
+```
+
+Stop the currently playing track:
+```
+./gspotify -s
 ```
 
 Play music and keep it playing when exiting the player:
