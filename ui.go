@@ -349,6 +349,34 @@ func (ui *ResultsUI) displayDetails(row int) {
 											// Create a new player UI for the selected track
 											playerUI := NewPlayerUI(ui.ctx, ui.client, *fullTrack, ui.keepPlaying, false)
 
+											// If we're in playlist mode, set the playlist tracks
+											if ui.resultType == "playlist" {
+												playlists := ui.results.([]spotify.SimplePlaylist)
+												if row-1 < len(playlists) {
+													playlist := playlists[row-1]
+													// Get the full playlist with tracks
+													fullPlaylist, err := ui.client.GetPlaylist(ui.ctx, playlist.ID)
+													if err == nil && fullPlaylist != nil {
+														playerUI.SetPlaylistTracks(fullPlaylist.Tracks.Tracks)
+													}
+												}
+											} else if ui.resultType == "track" {
+												// Set the search results tracks for track search mode
+												tracks := ui.results.([]spotify.FullTrack)
+												playerUI.SetSearchTracks(tracks)
+											} else if ui.resultType == "album" {
+												// Set the album tracks for album mode
+												albums := ui.results.([]spotify.SimpleAlbum)
+												if row-1 < len(albums) {
+													album := albums[row-1]
+													// Get the album tracks
+													albumTracks, err := ui.client.GetAlbumTracks(ui.ctx, album.ID)
+													if err == nil && albumTracks != nil {
+														playerUI.SetAlbumTracks(albumTracks.Tracks)
+													}
+												}
+											}
+
 											// Set up the return to results function if needed
 											if ui.returnToMenu != nil {
 												playerUI.SetReturnToMenuFunction(ui.returnToMenu)
@@ -481,6 +509,34 @@ func (ui *ResultsUI) displayDetails(row int) {
 												// Create a new player UI for the selected track
 												playerUI := NewPlayerUI(ui.ctx, ui.client, t, ui.keepPlaying, false)
 
+												// If we're in playlist mode, set the playlist tracks
+												if ui.resultType == "playlist" {
+													playlists := ui.results.([]spotify.SimplePlaylist)
+													if row-1 < len(playlists) {
+														playlist := playlists[row-1]
+														// Get the full playlist with tracks
+														fullPlaylist, err := ui.client.GetPlaylist(ui.ctx, playlist.ID)
+														if err == nil && fullPlaylist != nil {
+															playerUI.SetPlaylistTracks(fullPlaylist.Tracks.Tracks)
+														}
+													}
+												} else if ui.resultType == "track" {
+													// Set the search results tracks for track search mode
+													tracks := ui.results.([]spotify.FullTrack)
+													playerUI.SetSearchTracks(tracks)
+												} else if ui.resultType == "album" {
+													// Set the album tracks for album mode
+													albums := ui.results.([]spotify.SimpleAlbum)
+													if row-1 < len(albums) {
+														album := albums[row-1]
+														// Get the album tracks
+														albumTracks, err := ui.client.GetAlbumTracks(ui.ctx, album.ID)
+														if err == nil && albumTracks != nil {
+															playerUI.SetAlbumTracks(albumTracks.Tracks)
+														}
+													}
+												}
+
 												// Set up the return to results function if needed
 												if ui.returnToMenu != nil {
 													playerUI.SetReturnToMenuFunction(ui.returnToMenu)
@@ -580,6 +636,34 @@ func (ui *ResultsUI) displayDetails(row int) {
 
 				// Create a new player UI for the selected track
 				playerUI := NewPlayerUI(ui.ctx, ui.client, *selectedTrack, ui.keepPlaying, false)
+
+				// If we're in playlist mode, set the playlist tracks
+				if ui.resultType == "playlist" {
+					playlists := ui.results.([]spotify.SimplePlaylist)
+					if row-1 < len(playlists) {
+						playlist := playlists[row-1]
+						// Get the full playlist with tracks
+						fullPlaylist, err := ui.client.GetPlaylist(ui.ctx, playlist.ID)
+						if err == nil && fullPlaylist != nil {
+							playerUI.SetPlaylistTracks(fullPlaylist.Tracks.Tracks)
+						}
+					}
+				} else if ui.resultType == "track" {
+					// Set the search results tracks for track search mode
+					tracks := ui.results.([]spotify.FullTrack)
+					playerUI.SetSearchTracks(tracks)
+				} else if ui.resultType == "album" {
+					// Set the album tracks for album mode
+					albums := ui.results.([]spotify.SimpleAlbum)
+					if row-1 < len(albums) {
+						album := albums[row-1]
+						// Get the album tracks
+						albumTracks, err := ui.client.GetAlbumTracks(ui.ctx, album.ID)
+						if err == nil && albumTracks != nil {
+							playerUI.SetAlbumTracks(albumTracks.Tracks)
+						}
+					}
+				}
 
 				// Set up the return to results function if needed
 				if ui.returnToMenu != nil {

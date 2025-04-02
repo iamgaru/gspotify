@@ -53,6 +53,7 @@ func main() {
 		returnToMenu = flag.Bool("r", false, "Return to interactive menu after viewing search results")
 		keepPlaying  = flag.Bool("k", false, "Keep music playing when exiting the player interface")
 		autoPlay     = flag.Bool("p", false, "Automatically play the first result and exit")
+		stopPlayback = flag.Bool("s", false, "Stop the currently playing track")
 	)
 
 	// Add long flag alternatives (kept for backward compatibility but not documented)
@@ -65,6 +66,7 @@ func main() {
 	flag.BoolVar(returnToMenu, "return-to-menu", false, "")
 	flag.BoolVar(keepPlaying, "keep-playing", false, "")
 	flag.BoolVar(autoPlay, "auto-play", false, "")
+	flag.BoolVar(stopPlayback, "stop", false, "")
 
 	// Define usage information
 	flag.Usage = func() {
@@ -106,6 +108,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  %s -q \"Bohemian Rhapsody\" -k\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -q \"Bohemian Rhapsody\" -p\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -u spotify\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -s\n", os.Args[0])
 	}
 
 	flag.Parse()
@@ -113,6 +116,12 @@ func main() {
 	// Initialize Spotify client
 	ctx := context.Background()
 	client := getSpotifyClient(ctx)
+
+	// Check if stop playback is requested
+	if *stopPlayback {
+		stopCurrentlyPlaying(ctx, client)
+		return
+	}
 
 	// Check if interactive mode is enabled
 	if *interactive {

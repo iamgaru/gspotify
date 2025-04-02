@@ -28,6 +28,16 @@ type PlayerUI struct {
 	pausedPosition time.Duration // Add a field to store the paused position
 	keepPlaying    bool          // Flag to determine if music should keep playing when exiting
 	autoQuit       bool          // Flag to immediately exit after starting playback
+	// Playlist-related fields
+	playlistTracks    []spotify.PlaylistTrack
+	currentTrackIndex int
+	isPlaylistMode    bool
+	// Search results fields
+	searchTracks []spotify.FullTrack
+	isSearchMode bool
+	// Album-related fields
+	albumTracks []spotify.SimpleTrack
+	isAlbumMode bool
 }
 
 // NewPlayerUI creates a new player UI
@@ -41,15 +51,19 @@ func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.Full
 		SetTextAlign(tview.AlignLeft)
 
 	playerUI := &PlayerUI{
-		app:           app,
-		progressBar:   progressBar,
-		infoText:      infoText,
-		track:         track,
-		client:        client,
-		ctx:           ctx,
-		totalDuration: time.Duration(track.Duration) * time.Millisecond,
-		keepPlaying:   keepPlaying, // Use the provided value instead of hardcoded default
-		autoQuit:      autoQuit,    // Set the auto-quit flag
+		app:               app,
+		progressBar:       progressBar,
+		infoText:          infoText,
+		track:             track,
+		client:            client,
+		ctx:               ctx,
+		totalDuration:     time.Duration(track.Duration) * time.Millisecond,
+		keepPlaying:       keepPlaying,
+		autoQuit:          autoQuit,
+		currentTrackIndex: 0,
+		isPlaylistMode:    false,
+		isSearchMode:      false,
+		isAlbumMode:       false,
 	}
 
 	// Create layout
@@ -95,6 +109,17 @@ func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.Full
 			playerUI.updateInfoText()
 		}
 
+		// Handle 'n' key for next track in playlist mode, search mode, or album mode
+		if event.Rune() == 'n' {
+			if playerUI.isPlaylistMode {
+				playerUI.playNextTrack()
+			} else if playerUI.isSearchMode {
+				playerUI.playNextSearchTrack()
+			} else if playerUI.isAlbumMode {
+				playerUI.playNextAlbumTrack()
+			}
+		}
+
 		return event
 	})
 
@@ -102,6 +127,132 @@ func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.Full
 	playerUI.updateInfoText()
 
 	return playerUI
+}
+
+// SetPlaylistTracks sets the playlist tracks and enables playlist mode
+func (p *PlayerUI) SetPlaylistTracks(tracks []spotify.PlaylistTrack) {
+	p.playlistTracks = tracks
+	p.isPlaylistMode = true
+
+	// Find the index of the current track in the playlist
+	for i, track := range tracks {
+		if track.Track.ID == p.track.ID {
+			p.currentTrackIndex = i
+			break
+		}
+	}
+
+	p.updateInfoText()
+}
+
+// playNextTrack plays the next track in the playlist
+func (p *PlayerUI) playNextTrack() {
+	if !p.isPlaylistMode {
+		return
+	}
+
+	// If we're at the end of the playlist
+	if p.currentTrackIndex >= len(p.playlistTracks)-1 {
+		if p.keepPlaying {
+			// Loop back to the beginning
+			p.currentTrackIndex = -1
+		} else {
+			return
+		}
+	}
+
+	p.currentTrackIndex++
+	nextTrack := p.playlistTracks[p.currentTrackIndex].Track
+	p.track = nextTrack
+	p.totalDuration = time.Duration(nextTrack.Duration) * time.Millisecond
+	p.pausedPosition = 0
+	p.startTime = time.Now()
+	p.updateInfoText()
+	p.startPlayback()
+}
+
+// SetSearchTracks sets the search results tracks and enables search mode
+func (p *PlayerUI) SetSearchTracks(tracks []spotify.FullTrack) {
+	p.searchTracks = tracks
+	p.isSearchMode = true
+
+	// Find the index of the current track in the search results
+	for i, track := range tracks {
+		if track.ID == p.track.ID {
+			p.currentTrackIndex = i
+			break
+		}
+	}
+
+	p.updateInfoText()
+}
+
+// playNextSearchTrack plays the next track in the search results
+func (p *PlayerUI) playNextSearchTrack() {
+	if !p.isSearchMode || p.currentTrackIndex >= len(p.searchTracks)-1 {
+		return
+	}
+
+	p.currentTrackIndex++
+	nextTrack := p.searchTracks[p.currentTrackIndex]
+	p.track = nextTrack
+	p.totalDuration = time.Duration(nextTrack.Duration) * time.Millisecond
+	p.pausedPosition = 0
+	p.startTime = time.Now()
+	p.updateInfoText()
+	p.startPlayback()
+}
+
+// SetAlbumTracks sets the album tracks and enables album mode
+func (p *PlayerUI) SetAlbumTracks(tracks []spotify.SimpleTrack) {
+	p.albumTracks = tracks
+	p.isAlbumMode = true
+
+	// Find the index of the current track in the album
+	for i, track := range tracks {
+		if track.ID == p.track.ID {
+			p.currentTrackIndex = i
+			break
+		}
+	}
+
+	p.updateInfoText()
+}
+
+// playNextAlbumTrack plays the next track in the album
+func (p *PlayerUI) playNextAlbumTrack() {
+	if !p.isAlbumMode {
+		return
+	}
+
+	// If we're at the end of the album
+	if p.currentTrackIndex >= len(p.albumTracks)-1 {
+		if p.keepPlaying {
+			// Loop back to the beginning
+			p.currentTrackIndex = -1
+		} else {
+			return
+		}
+	}
+
+	p.currentTrackIndex++
+	nextTrack := p.albumTracks[p.currentTrackIndex]
+
+	// Get the full track info
+	fullTrack, err := p.client.GetTrack(p.ctx, nextTrack.ID)
+	if err != nil {
+		p.app.QueueUpdateDraw(func() {
+			p.progressBar.SetText(fmt.Sprintf("[red]Error getting next track: %v[white]", err))
+		})
+		return
+	}
+
+	p.track = *fullTrack
+	p.totalDuration = time.Duration(fullTrack.Duration) * time.Millisecond
+	p.pausedPosition = 0
+	p.startTime = time.Now()
+	p.updateInfoText()
+	p.startPlayback()
 }
 
 // updateInfoText updates the track information display
@@ -116,13 +267,23 @@ func (p *PlayerUI) updateInfoText() {
 		keepPlayingStatus = "ON"
 	}
 
+	progressInfo := ""
+	if p.isPlaylistMode {
+		progressInfo = fmt.Sprintf("\n[green]Playlist Progress:[white] %d/%d tracks", p.currentTrackIndex+1, len(p.playlistTracks))
+	} else if p.isSearchMode {
+		progressInfo = fmt.Sprintf("\n[green]Search Results Progress:[white] %d/%d tracks", p.currentTrackIndex+1, len(p.searchTracks))
+	} else if p.isAlbumMode {
+		progressInfo = fmt.Sprintf("\n[green]Album Progress:[white] %d/%d tracks", p.currentTrackIndex+1, len(p.albumTracks))
+	}
+
 	info := fmt.Sprintf(
-		"[green]Track:[white] %s\n[green]Artists:[white] %s\n[green]Album:[white] %s\n[green]Release Date:[white] %s\n\n"+
-			"[yellow]Press Space to play/pause. Press 'k' to toggle keep playing (%s). Press Esc to return.[white]",
+		"[green]Track:[white] %s\n[green]Artists:[white] %s\n[green]Album:[white] %s\n[green]Release Date:[white] %s%s\n\n"+
+			"[yellow]Press Space to play/pause. Press 'k' to toggle keep playing (%s). Press 'n' for next track. Press Esc to return.[white]",
 		p.track.Name,
 		strings.Join(artists, ", "),
 		p.track.Album.Name,
 		p.track.Album.ReleaseDate,
+		progressInfo,
 		keepPlayingStatus,
 	)
 
@@ -268,7 +429,42 @@ func (p *PlayerUI) startPlayback() chan error {
 
 			elapsed := time.Since(p.startTime)
 			if elapsed > p.totalDuration {
-				p.stopPlayback()
+				if p.isPlaylistMode {
+					if p.currentTrackIndex < len(p.playlistTracks)-1 {
+						p.playNextTrack()
+					} else if p.keepPlaying {
+						// If we're at the end of the playlist and keep playing is enabled,
+						// loop back to the beginning
+						p.currentTrackIndex = -1
+						p.playNextTrack()
+					} else {
+						p.stopPlayback()
+					}
+				} else if p.isSearchMode {
+					if p.currentTrackIndex < len(p.searchTracks)-1 {
+						p.playNextSearchTrack()
+					} else if p.keepPlaying {
+						// If we're at the end of the search results and keep playing is enabled,
+						// loop back to the beginning
+						p.currentTrackIndex = -1
+						p.playNextSearchTrack()
+					} else {
+						p.stopPlayback()
+					}
+				} else if p.isAlbumMode {
+					if p.currentTrackIndex < len(p.albumTracks)-1 {
+						p.playNextAlbumTrack()
+					} else if p.keepPlaying {
+						// If we're at the end of the album and keep playing is enabled,
+						// loop back to the beginning
+						p.currentTrackIndex = -1
+						p.playNextAlbumTrack()
+					} else {
+						p.stopPlayback()
+					}
+				} else {
+					p.stopPlayback()
+				}
 				break
 			}
 
