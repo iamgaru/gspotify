@@ -1,4 +1,4 @@
-# GSpotify CLI
+# gspotty
 
 <p align="center">
   <img src="gs-gopher.png" alt="GSpotify Gopher" width="300">
@@ -26,8 +26,8 @@ A simple command-line interface for searching and playing Spotify tracks, albums
 
 1. Clone the repository:
    ```
-   git clone https://github.com/iamgaru/gspotify.git
-   cd gspotify
+   git clone https://github.com/iamgaru/gspotty.git
+   cd gspotty
    ```
 
 2. Build the application:
@@ -46,7 +46,7 @@ A simple command-line interface for searching and playing Spotify tracks, albums
 ## Usage
 
 ```
-./gspotify [options]
+./gspotty [options]
 ```
 
 ### Command Flags
@@ -56,7 +56,7 @@ A simple command-line interface for searching and playing Spotify tracks, albums
 | `-t` | Type of search: track, album, or playlist | "track" |
 | `-q` | Search query | Required |
 | `-a` | Artist name to filter results (only for track search) | Optional |
-| `-l` | Number of results to display | 5 |
+| `-l` | Number of results to display (max 50) | 5 |
 | `-d` | Show detailed information about the results | false |
 | `-i` | Run in interactive mode with a menu interface | false |
 | `-r` | Return to interactive menu after viewing search results | false |
@@ -65,91 +65,93 @@ A simple command-line interface for searching and playing Spotify tracks, albums
 | `-u` | Spotify user ID to look up profile information | Optional |
 | `-s` | Stop the currently playing track | false |
 
+> **Note**: Long-form flags (e.g., `--type`, `--query`, `--artist`) are also supported for backward compatibility but are not documented in the help text.
+
 ### Examples
 
 #### Basic Search
 
 Search for tracks:
 ```
-./gspotify -q "Bohemian Rhapsody"
+./gspotty -q "Bohemian Rhapsody"
 ```
 
 Search for tracks by a specific artist:
 ```
-./gspotify -q "Bohemian Rhapsody" -a "Queen"
+./gspotty -q "Bohemian Rhapsody" -a "Queen"
 ```
 
 #### Changing Search Type
 
 Search for albums:
 ```
-./gspotify -t album -q "Dark Side of the Moon"
+./gspotty -t album -q "Dark Side of the Moon"
 ```
 
 Search for playlists:
 ```
-./gspotify -t playlist -q "workout"
+./gspotty -t playlist -q "workout"
 ```
 
 #### Additional Options
 
 Limit results to 3:
 ```
-./gspotify -q "Dark Side of the Moon" -l 3
+./gspotty -q "Dark Side of the Moon" -l 3
 ```
 
 Show detailed information:
 ```
-./gspotify -q "workout" -d
+./gspotty -q "workout" -d
 ```
 
 Run in interactive mode:
 ```
-./gspotify -i
+./gspotty -i
 ```
 
 Search and return to menu:
 ```
-./gspotify -q "Bohemian Rhapsody" -r
+./gspotty -q "Bohemian Rhapsody" -r
 ```
 
 Stop the currently playing track:
 ```
-./gspotify -s
+./gspotty -s
 ```
 
 Play music and keep it playing when exiting the player:
 ```
-./gspotify -q "Bohemian Rhapsody" -k
+./gspotty -q "Bohemian Rhapsody" -k
 ```
 
 Automatically play the first result:
 ```
-./gspotify -q "Bohemian Rhapsody" -p
+./gspotty -q "Bohemian Rhapsody" -p
 ```
 
 Automatically play the first result and continue playing after exit:
 ```
-./gspotify -q "Bohemian Rhapsody" -p -k
+./gspotty -q "Bohemian Rhapsody" -p -k
 ```
 
 #### Combined Options
 
 Search for Queen albums with detailed information:
 ```
-./gspotify -t album -q "Queen" -d
+./gspotty -t album -q "Queen" -d
 ```
 
 Search for workout playlists, limit to 10, and show details:
 ```
-./gspotify -t playlist -q "workout" -l 10 -d
+./gspotty -t playlist -q "workout" -l 10 -d
 ```
 
 #### User Profile Lookup
 
 Look up a Spotify user's public profile:
 ```
-./gspotify -u spotify
+./gspotty -u spotify
 ```
 
 ## Interactive Mode
@@ -159,10 +161,16 @@ When running in interactive mode, the application presents a user-friendly form 
 1. Select the search type (track, album, or playlist)
 2. Enter your search query
 3. Specify an artist name (for track searches)
-4. Set the number of results to display
+4. Set the number of results to display (1-50)
 5. Choose whether to show detailed information
 
 After submitting the form, the search results will be displayed in the same tabular format as the non-interactive mode.
+
+The interactive interface supports both keyboard navigation and mouse input:
+- Use arrow keys or mouse to navigate through results
+- Click on Spotify links to open them in your browser
+- Click buttons to perform actions
+- Use keyboard shortcuts for quick access to common functions
 
 ### Playing Music
 
@@ -249,7 +257,9 @@ When the `-d` flag is used or "Show Detailed Results" is selected in interactive
 - The Spotify API has rate limits, so excessive usage may result in temporary blocks.
 - You need to obtain your own Spotify API credentials from the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/).
 - **First-time Authorization**: When you first use the application, you will be prompted to authorize it to play Spotify tracks. A browser window will open automatically, and you'll need to log in to your Spotify account and approve the requested permissions. This authorization only happens once, and the app will save your credentials for future use.
-- Music playback requires an active Spotify device (such as the Spotify desktop app or web player). 
+- Music playback requires an active Spotify device (such as the Spotify desktop app or web player).
+- The application does not support playback of podcast episodes. If a playlist contains podcast episodes, they will be skipped during playback.
+- Search results are limited to a maximum of 50 items per query.
 
 ## Quick Play Script
 
@@ -276,7 +286,7 @@ play Bohemian Rhapsody
 
 This is equivalent to:
 ```
-./gspotify -t track -q "Bohemian Rhapsody" -p -k
+./gspotty -t track -q "Bohemian Rhapsody" -p -k
 ```
 
 The script will:
@@ -285,7 +295,7 @@ The script will:
 3. Continue playing even after exiting (-k flag)
 4. Display a confirmation message
 
-The script is a convenient shorthand when you just want to quickly play a song without interacting with the search results. 
+The script is a convenient shorthand when you just want to quickly play a song without interacting with the search results.
 
 ## License
 
@@ -296,9 +306,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ```
 +----------------+------------------+
 | Author         | Nick Conolly     |
-| Version        | 0.0.2            |
+| Version        | 0.2.1            |
 | GitHub         | iamgaru          |
 +----------------+------------------+
 ```
-
-GitHub: [https://github.com/iamgaru](https://github.com/iamgaru) 

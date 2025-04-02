@@ -78,7 +78,7 @@ func getSpotifyClient(ctx context.Context) *spotify.Client {
 		fmt.Println("You need to authorize this application to control Spotify.")
 		fmt.Println("This is a one-time process. After authorization, you won't need to do this again.")
 		// Generate a random state string for security
-		state := "gspotify-auth-" + fmt.Sprintf("%d", time.Now().UnixNano())
+		state := "gspotty-auth-" + fmt.Sprintf("%d", time.Now().UnixNano())
 
 		// Generate the auth URL
 		authURL := auth.AuthURL(state)
