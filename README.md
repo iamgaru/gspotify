@@ -19,6 +19,8 @@ A simple command-line interface for searching and playing Spotify tracks, albums
 - User profile lookup functionality
 - Built-in music player with playback controls
 - Keep music playing option even after exiting the player interface
+- Support for playlist, search, and album playback modes with next track functionality
+- Automatic looping in playlist, search, and album modes when "Keep Playing" is enabled
 
 ## Installation
 
@@ -174,7 +176,33 @@ When playing a track, the player interface provides the following controls:
 |-----|----------|
 | Space | Play/Pause the current track |
 | k | Toggle "Keep Playing" mode (ON/OFF) |
+| n | Play next track (in playlist, search, or album mode) |
 | Esc | Return to the previous menu |
+
+### Playback Modes
+
+The player supports different playback modes depending on how you started playback:
+
+#### Playlist Mode
+- Automatically enabled when playing from a playlist
+- Press 'n' to play the next track in the playlist
+- When reaching the end of the playlist:
+  - If "Keep Playing" is ON: Loops back to the beginning
+  - If "Keep Playing" is OFF: Stops playback
+
+#### Search Mode
+- Automatically enabled when playing from search results
+- Press 'n' to play the next track from search results
+- When reaching the end of search results:
+  - If "Keep Playing" is ON: Loops back to the beginning
+  - If "Keep Playing" is OFF: Stops playback
+
+#### Album Mode
+- Automatically enabled when playing from an album
+- Press 'n' to play the next track in the album
+- When reaching the end of the album:
+  - If "Keep Playing" is ON: Loops back to the beginning
+  - If "Keep Playing" is OFF: Stops playback
 
 ### Keep Playing Mode
 
@@ -259,6 +287,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Author & Version
 
-**Author:** Nick Conolly  
-**Version:** 0.0.2  
-**GitHub:** [https://github.com/iamgaru](https://github.com/iamgaru) 
+```
++----------------+------------------+
+| Author         | Nick Conolly     |
+| Version        | 0.0.2           |
+| GitHub         | iamgaru         |
++----------------+------------------+
+```
+
+GitHub: [https://github.com/iamgaru](https://github.com/iamgaru) 
