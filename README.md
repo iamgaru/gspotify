@@ -1,4 +1,4 @@
-# GSpotify CLI
+# gspotty
 
 <p align="center">
   <img src="gs-gopher.png" alt="GSpotify Gopher" width="300">
@@ -26,8 +26,8 @@ A simple command-line interface for searching and playing Spotify tracks, albums
 
 1. Clone the repository:
    ```
-   git clone https://github.com/iamgaru/gspotify.git
-   cd gspotify
+   git clone https://github.com/iamgaru/gspotty.git
+   cd gspotty
    ```
 
 2. Build the application:
@@ -46,7 +46,7 @@ A simple command-line interface for searching and playing Spotify tracks, albums
 ## Usage
 
 ```
-./gspotify [options]
+./gspotty [options]
 ```
 
 ### Command Flags
@@ -71,85 +71,85 @@ A simple command-line interface for searching and playing Spotify tracks, albums
 
 Search for tracks:
 ```
-./gspotify -q "Bohemian Rhapsody"
+./gspotty -q "Bohemian Rhapsody"
 ```
 
 Search for tracks by a specific artist:
 ```
-./gspotify -q "Bohemian Rhapsody" -a "Queen"
+./gspotty -q "Bohemian Rhapsody" -a "Queen"
 ```
 
 #### Changing Search Type
 
 Search for albums:
 ```
-./gspotify -t album -q "Dark Side of the Moon"
+./gspotty -t album -q "Dark Side of the Moon"
 ```
 
 Search for playlists:
 ```
-./gspotify -t playlist -q "workout"
+./gspotty -t playlist -q "workout"
 ```
 
 #### Additional Options
 
 Limit results to 3:
 ```
-./gspotify -q "Dark Side of the Moon" -l 3
+./gspotty -q "Dark Side of the Moon" -l 3
 ```
 
 Show detailed information:
 ```
-./gspotify -q "workout" -d
+./gspotty -q "workout" -d
 ```
 
 Run in interactive mode:
 ```
-./gspotify -i
+./gspotty -i
 ```
 
 Search and return to menu:
 ```
-./gspotify -q "Bohemian Rhapsody" -r
+./gspotty -q "Bohemian Rhapsody" -r
 ```
 
 Stop the currently playing track:
 ```
-./gspotify -s
+./gspotty -s
 ```
 
 Play music and keep it playing when exiting the player:
 ```
-./gspotify -q "Bohemian Rhapsody" -k
+./gspotty -q "Bohemian Rhapsody" -k
 ```
 
 Automatically play the first result:
 ```
-./gspotify -q "Bohemian Rhapsody" -p
+./gspotty -q "Bohemian Rhapsody" -p
 ```
 
 Automatically play the first result and continue playing after exit:
 ```
-./gspotify -q "Bohemian Rhapsody" -p -k
+./gspotty -q "Bohemian Rhapsody" -p -k
 ```
 
 #### Combined Options
 
 Search for Queen albums with detailed information:
 ```
-./gspotify -t album -q "Queen" -d
+./gspotty -t album -q "Queen" -d
 ```
 
 Search for workout playlists, limit to 10, and show details:
 ```
-./gspotify -t playlist -q "workout" -l 10 -d
+./gspotty -t playlist -q "workout" -l 10 -d
 ```
 
 #### User Profile Lookup
 
 Look up a Spotify user's public profile:
 ```
-./gspotify -u spotify
+./gspotty -u spotify
 ```
 
 ## Interactive Mode
@@ -276,29 +276,5 @@ play Bohemian Rhapsody
 
 This is equivalent to:
 ```
-./gspotify -t track -q "Bohemian Rhapsody" -p -k
+./gspotty -t track -q "Bohemian Rhapsody" -p -k
 ```
-
-The script will:
-1. Search for the specified track
-2. Automatically play the first match (-p flag)
-3. Continue playing even after exiting (-k flag)
-4. Display a confirmation message
-
-The script is a convenient shorthand when you just want to quickly play a song without interacting with the search results. 
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Author & Version
-
-```
-+----------------+------------------+
-| Author         | Nick Conolly     |
-| Version        | 0.0.2            |
-| GitHub         | iamgaru          |
-+----------------+------------------+
-```
-
-GitHub: [https://github.com/iamgaru](https://github.com/iamgaru) 

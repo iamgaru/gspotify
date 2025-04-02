@@ -1,4 +1,4 @@
-module gamu.io/gspotify
+module gamu.io/gspotty
 
 go 1.23.5
 
