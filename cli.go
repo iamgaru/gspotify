@@ -262,6 +262,7 @@ func searchTracks(ctx context.Context, client *spotify.Client, query string, art
 			joinArtistNames(results.Tracks.Tracks[0].Artists))
 
 		playerUI := NewPlayerUI(ctx, client, results.Tracks.Tracks[0], keepPlaying, autoPlay)
+		playerUI.SetSearchTracks(results.Tracks.Tracks)
 		playerUI.Play()
 		return
 	}

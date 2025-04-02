@@ -32,6 +32,12 @@ type PlayerUI struct {
 	playlistTracks    []spotify.PlaylistTrack
 	currentTrackIndex int
 	isPlaylistMode    bool
+	// Search results fields
+	searchTracks []spotify.FullTrack
+	isSearchMode bool
+	// Album-related fields
+	albumTracks []spotify.SimpleTrack
+	isAlbumMode bool
 }
 
 // NewPlayerUI creates a new player UI
@@ -56,6 +62,8 @@ func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.Full
 		autoQuit:          autoQuit,
 		currentTrackIndex: 0,
 		isPlaylistMode:    false,
+		isSearchMode:      false,
+		isAlbumMode:       false,
 	}
 
 	// Create layout
@@ -101,9 +109,15 @@ func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.Full
 			playerUI.updateInfoText()
 		}
 
-		// Handle 'n' key for next track in playlist mode
-		if event.Rune() == 'n' && playerUI.isPlaylistMode {
-			playerUI.playNextTrack()
+		// Handle 'n' key for next track in playlist mode, search mode, or album mode
+		if event.Rune() == 'n' {
+			if playerUI.isPlaylistMode {
+				playerUI.playNextTrack()
+			} else if playerUI.isSearchMode {
+				playerUI.playNextSearchTrack()
+			} else if playerUI.isAlbumMode {
+				playerUI.playNextAlbumTrack()
+			}
 		}
 
 		return event
@@ -147,6 +161,80 @@ func (p *PlayerUI) playNextTrack() {
 	p.startPlayback()
 }
 
+// SetSearchTracks sets the search results tracks and enables search mode
+func (p *PlayerUI) SetSearchTracks(tracks []spotify.FullTrack) {
+	p.searchTracks = tracks
+	p.isSearchMode = true
+
+	// Find the index of the current track in the search results
+	for i, track := range tracks {
+		if track.ID == p.track.ID {
+			p.currentTrackIndex = i
+			break
+		}
+	}
+
+	p.updateInfoText()
+}
+
+// playNextSearchTrack plays the next track in the search results
+func (p *PlayerUI) playNextSearchTrack() {
+	if !p.isSearchMode || p.currentTrackIndex >= len(p.searchTracks)-1 {
+		return
+	}
+
+	p.currentTrackIndex++
+	nextTrack := p.searchTracks[p.currentTrackIndex]
+	p.track = nextTrack
+	p.totalDuration = time.Duration(nextTrack.Duration) * time.Millisecond
+	p.pausedPosition = 0
+	p.startTime = time.Now()
+	p.updateInfoText()
+	p.startPlayback()
+}
+
+// SetAlbumTracks sets the album tracks and enables album mode
+func (p *PlayerUI) SetAlbumTracks(tracks []spotify.SimpleTrack) {
+	p.albumTracks = tracks
+	p.isAlbumMode = true
+
+	// Find the index of the current track in the album
+	for i, track := range tracks {
+		if track.ID == p.track.ID {
+			p.currentTrackIndex = i
+			break
+		}
+	}
+
+	p.updateInfoText()
+}
+
+// playNextAlbumTrack plays the next track in the album
+func (p *PlayerUI) playNextAlbumTrack() {
+	if !p.isAlbumMode || p.currentTrackIndex >= len(p.albumTracks)-1 {
+		return
+	}
+
+	p.currentTrackIndex++
+	nextTrack := p.albumTracks[p.currentTrackIndex]
+
+	// Get the full track info
+	fullTrack, err := p.client.GetTrack(p.ctx, nextTrack.ID)
+	if err != nil {
+		p.app.QueueUpdateDraw(func() {
+			p.progressBar.SetText(fmt.Sprintf("[red]Error getting next track: %v[white]", err))
+		})
+		return
+	}
+
+	p.track = *fullTrack
+	p.totalDuration = time.Duration(nextTrack.Duration) * time.Millisecond
+	p.pausedPosition = 0
+	p.startTime = time.Now()
+	p.updateInfoText()
+	p.startPlayback()
+}
+
 // updateInfoText updates the track information display
 func (p *PlayerUI) updateInfoText() {
 	artists := make([]string, len(p.track.Artists))
@@ -159,9 +247,13 @@ func (p *PlayerUI) updateInfoText() {
 		keepPlayingStatus = "ON"
 	}
 
-	playlistInfo := ""
+	progressInfo := ""
 	if p.isPlaylistMode {
-		playlistInfo = fmt.Sprintf("\n[green]Playlist Progress:[white] %d/%d tracks", p.currentTrackIndex+1, len(p.playlistTracks))
+		progressInfo = fmt.Sprintf("\n[green]Playlist Progress:[white] %d/%d tracks", p.currentTrackIndex+1, len(p.playlistTracks))
+	} else if p.isSearchMode {
+		progressInfo = fmt.Sprintf("\n[green]Search Results Progress:[white] %d/%d tracks", p.currentTrackIndex+1, len(p.searchTracks))
+	} else if p.isAlbumMode {
+		progressInfo = fmt.Sprintf("\n[green]Album Progress:[white] %d/%d tracks", p.currentTrackIndex+1, len(p.albumTracks))
 	}
 
 	info := fmt.Sprintf(
@@ -171,7 +263,7 @@ func (p *PlayerUI) updateInfoText() {
 		strings.Join(artists, ", "),
 		p.track.Album.Name,
 		p.track.Album.ReleaseDate,
-		playlistInfo,
+		progressInfo,
 		keepPlayingStatus,
 	)
 
