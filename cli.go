@@ -569,3 +569,44 @@ func searchPlaylistsWithMenu(ctx context.Context, client *spotify.Client, query 
 	})
 	ui.DisplayPlaylistResults(ctx, client, results.Playlists.Playlists)
 }
+
+// stopCurrentlyPlaying stops the currently playing track
+func stopCurrentlyPlaying(ctx context.Context, client *spotify.Client) {
+	// Get available devices first
+	devices, err := client.PlayerDevices(ctx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error getting devices: %v\n", err)
+		return
+	}
+
+	// Check if there are any active devices
+	if len(devices) == 0 {
+		fmt.Println("No active Spotify devices found. Please open Spotify on any device first.")
+		return
+	}
+
+	// Find an active device to use
+	var deviceID spotify.ID
+	for _, device := range devices {
+		if device.Active {
+			deviceID = device.ID
+			break
+		}
+	}
+
+	// If no active device found, use the first available one
+	if deviceID == "" && len(devices) > 0 {
+		deviceID = devices[0].ID
+	}
+
+	// Pause playback on the device
+	err = client.PauseOpt(ctx, &spotify.PlayOptions{
+		DeviceID: &deviceID,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error stopping playback: %v\n", err)
+		return
+	}
+
+	fmt.Println("Playback stopped successfully.")
+}
