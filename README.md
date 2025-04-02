@@ -56,7 +56,7 @@ A simple command-line interface for searching and playing Spotify tracks, albums
 | `-t` | Type of search: track, album, or playlist | "track" |
 | `-q` | Search query | Required |
 | `-a` | Artist name to filter results (only for track search) | Optional |
-| `-l` | Number of results to display | 5 |
+| `-l` | Number of results to display (max 50) | 5 |
 | `-d` | Show detailed information about the results | false |
 | `-i` | Run in interactive mode with a menu interface | false |
 | `-r` | Return to interactive menu after viewing search results | false |
@@ -64,6 +64,8 @@ A simple command-line interface for searching and playing Spotify tracks, albums
 | `-p` | Automatically play the first result and exit | false |
 | `-u` | Spotify user ID to look up profile information | Optional |
 | `-s` | Stop the currently playing track | false |
+
+> **Note**: Long-form flags (e.g., `--type`, `--query`, `--artist`) are also supported for backward compatibility but are not documented in the help text.
 
 ### Examples
 
@@ -159,10 +161,16 @@ When running in interactive mode, the application presents a user-friendly form 
 1. Select the search type (track, album, or playlist)
 2. Enter your search query
 3. Specify an artist name (for track searches)
-4. Set the number of results to display
+4. Set the number of results to display (1-50)
 5. Choose whether to show detailed information
 
 After submitting the form, the search results will be displayed in the same tabular format as the non-interactive mode.
+
+The interactive interface supports both keyboard navigation and mouse input:
+- Use arrow keys or mouse to navigate through results
+- Click on Spotify links to open them in your browser
+- Click buttons to perform actions
+- Use keyboard shortcuts for quick access to common functions
 
 ### Playing Music
 
@@ -249,7 +257,9 @@ When the `-d` flag is used or "Show Detailed Results" is selected in interactive
 - The Spotify API has rate limits, so excessive usage may result in temporary blocks.
 - You need to obtain your own Spotify API credentials from the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/).
 - **First-time Authorization**: When you first use the application, you will be prompted to authorize it to play Spotify tracks. A browser window will open automatically, and you'll need to log in to your Spotify account and approve the requested permissions. This authorization only happens once, and the app will save your credentials for future use.
-- Music playback requires an active Spotify device (such as the Spotify desktop app or web player). 
+- Music playback requires an active Spotify device (such as the Spotify desktop app or web player).
+- The application does not support playback of podcast episodes. If a playlist contains podcast episodes, they will be skipped during playback.
+- Search results are limited to a maximum of 50 items per query.
 
 ## Quick Play Script
 
