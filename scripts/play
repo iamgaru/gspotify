@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Check if a search query was provided
+if [ $# -eq 0 ]; then
+    echo "Usage: play <search query>"
+    echo "Example: play Bohemian Rhapsody"
+    exit 1
+fi
+
+# Get the current directory of the script
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Build the full path to gspotty (one directory up from scripts)
+GSPOTTY_PATH="$SCRIPT_DIR/../gspotty"
+
+# Check if gspotty exists
+if [ ! -f "$GSPOTTY_PATH" ]; then
+    echo "Error: gspotty binary not found in $GSPOTTY_PATH"
+    echo "Please make sure you have built the application using 'make build'"
+    exit 1
+fi
+
+# Run gspotty with the provided query
+# -t track: Search for tracks
+# -q "$*": Use all arguments as the search query
+# -p: Automatically play the first result
+# -k: Keep playing after exiting
+"$GSPOTTY_PATH" -t track -q "$*" -p -k
+
+# Check if the command was successful
+if [ $? -eq 0 ]; then
+    echo "Playing: $*"
+else
+    echo "Error: Failed to play music"
+    exit 1
+fi 
