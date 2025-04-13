@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Check if a search query was provided
+if [ -z "$1" ]; then
+    echo "Usage: play <search query>"
+    echo "Example: play Bohemian Rhapsody"
+    exit 1
+fi
+
+# Build the search query from all arguments
+SEARCH_QUERY="$*"
+
+# Run gspotty with the appropriate flags
+./gspotty -t track -q "$SEARCH_QUERY" -p -k
+
+# Check if the command was successful
+if [ $? -eq 0 ]; then
+    echo "🎵 Now playing: $SEARCH_QUERY"
+else
+    echo "❌ Failed to play: $SEARCH_QUERY"
+    exit 1
+fi 
