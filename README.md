@@ -6,6 +6,23 @@
 
 A simple command-line interface for searching and playing Spotify tracks, albums, and playlists.
 
+## Table of Contents
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Command Flags](#command-flags)
+  - [Examples](#examples)
+  - [User Profile Lookup](#user-profile-lookup)
+- [Interactive Mode](#interactive-mode)
+- [Music Player Controls](#music-player-controls)
+  - [Playback Modes](#playback-modes)
+  - [Keep Playing Mode](#keep-playing-mode)
+- [Output](#output)
+- [Troubleshooting](#troubleshooting)
+- [Quick Play Script](#quick-play-script)
+- [License](#license)
+- [Author & Version](#author--version)
+
 ## Features
 
 - Search for tracks, albums, or playlists
@@ -149,10 +166,28 @@ Search for workout playlists, limit to 10, and show details:
 
 #### User Profile Lookup
 
-Look up a Spotify user's public profile:
+Look up a Spotify user's public profile information. This will display:
+- User ID
+- Display name
+- Spotify URI
+- Endpoint
+- Number of followers
+
+Example:
 ```
 ./gspotty -u spotify
 ```
+
+Output example:
+```
+User ID: spotify
+Display name: Spotify
+Spotify URI: spotify:user:spotify
+Endpoint: https://api.spotify.com/v1/users/spotify
+Followers: 1234567
+```
+
+> **Note**: The user profile lookup uses the Spotify API's client credentials flow, so it can only access public profile information. Private profiles or additional user data will not be available.
 
 ## Interactive Mode
 
@@ -251,15 +286,44 @@ When the `-d` flag is used or "Show Detailed Results" is selected in interactive
 - **Albums**: First few tracks
 - **Playlists**: Description and sample tracks
 
-## Notes
+## Troubleshooting
 
-- The application uses client credentials flow for authentication, so it can only access public data.
-- The Spotify API has rate limits, so excessive usage may result in temporary blocks.
-- You need to obtain your own Spotify API credentials from the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/).
-- **First-time Authorization**: When you first use the application, you will be prompted to authorize it to play Spotify tracks. A browser window will open automatically, and you'll need to log in to your Spotify account and approve the requested permissions. This authorization only happens once, and the app will save your credentials for future use.
-- Music playback requires an active Spotify device (such as the Spotify desktop app or web player).
-- The application does not support playback of podcast episodes. If a playlist contains podcast episodes, they will be skipped during playback.
-- Search results are limited to a maximum of 50 items per query.
+### Common Issues and Solutions
+
+1. **Authorization Issues**
+   - If you're having trouble with authorization, try clearing your Spotify credentials:
+     ```
+     rm ~/.config/gspotty/credentials.json
+     ```
+   - Then restart the application to trigger a new authorization flow.
+
+2. **Playback Issues**
+   - Make sure you have an active Spotify device (desktop app or web player)
+   - Check if your Spotify account is active and not in offline mode
+   - Verify that your system's audio is working properly
+
+3. **API Rate Limits**
+   - If you see "Too Many Requests" errors, wait a few minutes before trying again
+   - The Spotify API has rate limits that reset periodically
+
+4. **Search Not Working**
+   - Ensure your search query is properly formatted
+   - Try using quotes around multi-word queries
+   - Check your internet connection
+
+5. **Interactive Mode Issues**
+   - If the interface looks distorted, try resizing your terminal window
+   - Make sure your terminal supports UTF-8 characters
+   - If keyboard controls aren't working, try using mouse input instead
+
+### Error Messages
+
+| Error Message | Possible Cause | Solution |
+|--------------|---------------|----------|
+| "No active device found" | No Spotify device is active | Open Spotify desktop app or web player |
+| "Invalid client credentials" | SPOTIFY_ID or SPOTIFY_SECRET not set | Set environment variables correctly |
+| "Too Many Requests" | API rate limit exceeded | Wait a few minutes before trying again |
+| "Not Found" | Invalid user ID or search query | Check the input and try again |
 
 ## Quick Play Script
 

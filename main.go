@@ -8,6 +8,9 @@ import (
 	"golang.org/x/net/context"
 )
 
+// UserID is the Spotify user ID to look up profile information
+var UserID *string
+
 // checkEnvironmentVariables verifies that required Spotify API credentials are set
 func checkEnvironmentVariables() {
 	clientID := os.Getenv("SPOTIFY_ID")
@@ -68,6 +71,10 @@ func main() {
 	flag.BoolVar(autoPlay, "auto-play", false, "")
 	flag.BoolVar(stopPlayback, "stop", false, "")
 
+	// Define user profile lookup flag
+	UserID = flag.String("u", "", "Spotify user ID to look up profile information")
+	flag.StringVar(UserID, "user", "", "")
+
 	// Define usage information
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", os.Args[0])
@@ -120,6 +127,12 @@ func main() {
 	// Check if stop playback is requested
 	if *stopPlayback {
 		stopCurrentlyPlaying(ctx, client)
+		return
+	}
+
+	// Check if user profile lookup is requested
+	if *UserID != "" {
+		profile()
 		return
 	}
 

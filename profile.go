@@ -3,7 +3,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -15,21 +14,11 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
-var userID = flag.String("u", "", "the Spotify user ID to look up")
-
-func init() {
-	// Add long flag alternative (hidden from help)
-	flag.StringVar(userID, "user", "", "")
-}
-
 func profile() {
-	flag.Parse()
-
 	ctx := context.Background()
 
-	if *userID == "" {
+	if *UserID == "" {
 		fmt.Fprintf(os.Stderr, "Error: missing user ID\n")
-		flag.Usage()
 		return
 	}
 
@@ -45,7 +34,7 @@ func profile() {
 
 	httpClient := spotifyauth.New().Client(ctx, token)
 	client := spotify.New(httpClient)
-	user, err := client.GetUsersPublicProfile(ctx, spotify.ID(*userID))
+	user, err := client.GetUsersPublicProfile(ctx, spotify.ID(*UserID))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		return
