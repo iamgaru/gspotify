@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"context"
@@ -7,10 +7,15 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
+	"github.com/iamgaru/gspotty/internal/menu"
+	"github.com/iamgaru/gspotty/internal/player"
+	"github.com/iamgaru/gspotty/internal/ui"
 	"github.com/zmb3/spotify/v2"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
 	"golang.org/x/oauth2"
@@ -30,8 +35,24 @@ type TokenInfo struct {
 	Expiry       time.Time `json:"expiry"`
 }
 
-// getSpotifyClient initializes and returns a Spotify client with proper authentication for playback
-func getSpotifyClient(ctx context.Context) *spotify.Client {
+// openURL attempts to open a URL in the default browser
+func openURL(url string) error {
+	var err error
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+	return err
+}
+
+// GetSpotifyClient initializes and returns a Spotify client with proper authentication for playback
+func GetSpotifyClient(ctx context.Context) *spotify.Client {
 	clientID := os.Getenv("SPOTIFY_ID")
 	clientSecret := os.Getenv("SPOTIFY_SECRET")
 
@@ -234,16 +255,10 @@ func saveTokenToFile(token *oauth2.Token) error {
 	return nil
 }
 
-// searchTracks searches for tracks and displays the results
-func searchTracks(ctx context.Context, client *spotify.Client, query string, artist string, limit int, showDetails bool, keepPlaying bool, autoPlay bool) {
-	// Combine query and artist if artist is provided
-	searchQuery := query
-	if artist != "" {
-		searchQuery = fmt.Sprintf("%s artist:%s", query, artist)
-	}
-
+// SearchTracks searches for tracks and displays the results
+func SearchTracks(ctx context.Context, client *spotify.Client, query string, artistName string, limit int, showDetails bool, keepPlaying bool, autoPlay bool) {
 	// Search for tracks
-	results, err := client.Search(ctx, searchQuery, spotify.SearchTypeTrack, spotify.Limit(limit))
+	results, err := client.Search(ctx, query, spotify.SearchTypeTrack, spotify.Limit(limit))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error searching for tracks: %v\n", err)
 		return
@@ -261,16 +276,16 @@ func searchTracks(ctx context.Context, client *spotify.Client, query string, art
 			results.Tracks.Tracks[0].Name,
 			joinArtistNames(results.Tracks.Tracks[0].Artists))
 
-		playerUI := NewPlayerUI(ctx, client, results.Tracks.Tracks[0], keepPlaying, autoPlay)
+		playerUI := player.NewPlayerUI(ctx, client, results.Tracks.Tracks[0], keepPlaying, autoPlay)
 		playerUI.SetSearchTracks(results.Tracks.Tracks)
 		playerUI.Play()
 		return
 	}
 
 	// Use the scrollable UI to display results
-	ui := NewResultsUI("track", ctx, client, showDetails)
-	ui.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
-	ui.DisplayTrackResults(ctx, client, results.Tracks.Tracks)
+	resultsUI := ui.NewResultsUI("track", ctx, client, showDetails)
+	resultsUI.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
+	resultsUI.DisplayTrackResults(ctx, client, results.Tracks.Tracks)
 }
 
 // Helper function to join artist names for display
@@ -282,8 +297,8 @@ func joinArtistNames(artists []spotify.SimpleArtist) string {
 	return strings.Join(names, ", ")
 }
 
-// searchAlbums searches for albums and displays the results
-func searchAlbums(ctx context.Context, client *spotify.Client, query string, limit int, showDetails bool, keepPlaying bool, autoPlay bool) {
+// SearchAlbums searches for albums and displays the results
+func SearchAlbums(ctx context.Context, client *spotify.Client, query string, limit int, showDetails bool, keepPlaying bool, autoPlay bool) {
 	// Search for albums
 	results, err := client.Search(ctx, query, spotify.SearchTypeAlbum, spotify.Limit(limit))
 	if err != nil {
@@ -296,42 +311,41 @@ func searchAlbums(ctx context.Context, client *spotify.Client, query string, lim
 		return
 	}
 
-	// Auto-play the first album track if enabled
+	// Auto-play the first track of the first album if enabled
 	if autoPlay && len(results.Albums.Albums) > 0 {
-		album := results.Albums.Albums[0]
 		fmt.Printf("Found %d albums matching your query.\n", len(results.Albums.Albums))
-		fmt.Printf("Selected the first album: %s by %s\n",
-			album.Name,
-			joinArtistNames(album.Artists))
+		fmt.Printf("Auto-playing the first track from album: %s by %s\n",
+			results.Albums.Albums[0].Name,
+			joinArtistNames(results.Albums.Albums[0].Artists))
 
-		// Get the album's tracks
-		albumTracks, err := client.GetAlbumTracks(ctx, album.ID)
+		// Get the tracks from the first album
+		tracks, err := client.GetAlbumTracks(ctx, results.Albums.Albums[0].ID, spotify.Limit(1))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error getting album tracks: %v\n", err)
-		} else if len(albumTracks.Tracks) > 0 {
-			// Get the full track info for the first track
-			fullTrack, err := client.GetTrack(ctx, albumTracks.Tracks[0].ID)
+			return
+		}
+
+		if len(tracks.Tracks) > 0 {
+			// Get the full track info
+			fullTrack, err := client.GetTrack(ctx, tracks.Tracks[0].ID)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error getting full track info: %v\n", err)
-			} else {
-				fmt.Printf("Auto-playing the first track: %s\n", fullTrack.Name)
-				playerUI := NewPlayerUI(ctx, client, *fullTrack, keepPlaying, autoPlay)
-				playerUI.Play()
 				return
 			}
-		} else {
-			fmt.Println("No tracks found in the selected album.")
+			playerUI := player.NewPlayerUI(ctx, client, *fullTrack, keepPlaying, autoPlay)
+			playerUI.Play()
 		}
+		return
 	}
 
 	// Use the scrollable UI to display results
-	ui := NewResultsUI("album", ctx, client, showDetails)
-	ui.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
-	ui.DisplayAlbumResults(ctx, client, results.Albums.Albums)
+	resultsUI := ui.NewResultsUI("album", ctx, client, showDetails)
+	resultsUI.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
+	resultsUI.DisplayAlbumResults(ctx, client, results.Albums.Albums)
 }
 
-// searchPlaylists searches for playlists and displays the results
-func searchPlaylists(ctx context.Context, client *spotify.Client, query string, limit int, showDetails bool, keepPlaying bool, autoPlay bool) {
+// SearchPlaylists searches for playlists and displays the results
+func SearchPlaylists(ctx context.Context, client *spotify.Client, query string, limit int, showDetails bool, keepPlaying bool, autoPlay bool) {
 	// Search for playlists
 	results, err := client.Search(ctx, query, spotify.SearchTypePlaylist, spotify.Limit(limit))
 	if err != nil {
@@ -344,47 +358,33 @@ func searchPlaylists(ctx context.Context, client *spotify.Client, query string, 
 		return
 	}
 
-	// Auto-play the first playlist track if enabled
+	// Auto-play the first track of the first playlist if enabled
 	if autoPlay && len(results.Playlists.Playlists) > 0 {
-		playlist := results.Playlists.Playlists[0]
 		fmt.Printf("Found %d playlists matching your query.\n", len(results.Playlists.Playlists))
-		fmt.Printf("Selected the first playlist: %s by %s\n",
-			playlist.Name,
-			playlist.Owner.DisplayName)
+		fmt.Printf("Auto-playing the first track from playlist: %s\n", results.Playlists.Playlists[0].Name)
 
-		// Get the playlist's tracks
-		playlistTracks, err := client.GetPlaylistItems(ctx, playlist.ID)
+		// Get the tracks from the first playlist
+		tracks, err := client.GetPlaylistTracks(ctx, results.Playlists.Playlists[0].ID, spotify.Limit(1))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error getting playlist tracks: %v\n", err)
-		} else if len(playlistTracks.Items) > 0 {
-			// Check if the item contains a track (not an episode)
-			if playlistTracks.Items[0].Track.Track != nil {
-				track := playlistTracks.Items[0].Track.Track
-				fmt.Printf("Auto-playing the first track: %s by %s\n",
-					track.Name,
-					joinArtistNames(track.Artists))
-				playerUI := NewPlayerUI(ctx, client, *track, keepPlaying, autoPlay)
-				playerUI.Play()
-				return
-			} else if playlistTracks.Items[0].Track.Episode != nil {
-				// Episodes are not supported for playback in this application
-				fmt.Println("The first item is an episode, which is not supported for playback. Showing playlist instead.")
-			} else {
-				fmt.Println("No playable tracks found in the selected playlist.")
-			}
-		} else {
-			fmt.Println("No tracks found in the selected playlist.")
+			return
 		}
+
+		if len(tracks.Tracks) > 0 {
+			playerUI := player.NewPlayerUI(ctx, client, tracks.Tracks[0].Track, keepPlaying, autoPlay)
+			playerUI.Play()
+		}
+		return
 	}
 
 	// Use the scrollable UI to display results
-	ui := NewResultsUI("playlist", ctx, client, showDetails)
-	ui.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
-	ui.DisplayPlaylistResults(ctx, client, results.Playlists.Playlists)
+	resultsUI := ui.NewResultsUI("playlist", ctx, client, showDetails)
+	resultsUI.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
+	resultsUI.DisplayPlaylistResults(ctx, client, results.Playlists.Playlists)
 }
 
-// searchTracksWithMenu searches for tracks and displays the results with return to menu option
-func searchTracksWithMenu(ctx context.Context, client *spotify.Client, query string, artist string, limit int, showDetails bool, keepPlaying bool, autoPlay bool) {
+// SearchTracksWithMenu searches for tracks and displays the results with a menu interface
+func SearchTracksWithMenu(ctx context.Context, client *spotify.Client, query string, artist string, limit int, showDetails bool, keepPlaying bool, autoPlay bool) {
 	// Combine query and artist if artist is provided
 	searchQuery := query
 	if artist != "" {
@@ -410,12 +410,12 @@ func searchTracksWithMenu(ctx context.Context, client *spotify.Client, query str
 			results.Tracks.Tracks[0].Name,
 			joinArtistNames(results.Tracks.Tracks[0].Artists))
 
-		playerUI := NewPlayerUI(ctx, client, results.Tracks.Tracks[0], keepPlaying, autoPlay)
+		playerUI := player.NewPlayerUI(ctx, client, results.Tracks.Tracks[0], keepPlaying, autoPlay)
 		playerUI.SetReturnToMenuFunction(func() {
 			// Create and run a new instance of the interactive menu
-			menu := NewInteractiveMenu(ctx, client)
-			menu.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
-			if err := menu.Run(); err != nil {
+			interactiveMenu := menu.NewInteractiveMenu(ctx, client)
+			interactiveMenu.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
+			if err := interactiveMenu.Run(); err != nil {
 				fmt.Printf("Error running interactive menu: %v\n", err)
 			}
 		})
@@ -424,21 +424,21 @@ func searchTracksWithMenu(ctx context.Context, client *spotify.Client, query str
 	}
 
 	// Create and run a new interactive menu
-	ui := NewResultsUI("track", ctx, client, showDetails)
-	ui.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
-	ui.SetReturnToMenuFunction(func() {
+	resultsUI := ui.NewResultsUI("track", ctx, client, showDetails)
+	resultsUI.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
+	resultsUI.SetReturnToMenuFunction(func() {
 		// Create and run a new instance of the interactive menu
-		menu := NewInteractiveMenu(ctx, client)
-		menu.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
-		if err := menu.Run(); err != nil {
+		interactiveMenu := menu.NewInteractiveMenu(ctx, client)
+		interactiveMenu.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
+		if err := interactiveMenu.Run(); err != nil {
 			fmt.Printf("Error running interactive menu: %v\n", err)
 		}
 	})
-	ui.DisplayTrackResults(ctx, client, results.Tracks.Tracks)
+	resultsUI.DisplayTrackResults(ctx, client, results.Tracks.Tracks)
 }
 
-// searchAlbumsWithMenu searches for albums and displays the results with return to menu option
-func searchAlbumsWithMenu(ctx context.Context, client *spotify.Client, query string, limit int, showDetails bool, keepPlaying bool, autoPlay bool) {
+// SearchAlbumsWithMenu searches for albums and displays the results with a menu interface
+func SearchAlbumsWithMenu(ctx context.Context, client *spotify.Client, query string, limit int, showDetails bool, keepPlaying bool, autoPlay bool) {
 	// Search for albums
 	results, err := client.Search(ctx, query, spotify.SearchTypeAlbum, spotify.Limit(limit))
 	if err != nil {
@@ -470,12 +470,12 @@ func searchAlbumsWithMenu(ctx context.Context, client *spotify.Client, query str
 				fmt.Fprintf(os.Stderr, "Error getting full track info: %v\n", err)
 			} else {
 				fmt.Printf("Auto-playing the first track: %s\n", fullTrack.Name)
-				playerUI := NewPlayerUI(ctx, client, *fullTrack, keepPlaying, autoPlay)
+				playerUI := player.NewPlayerUI(ctx, client, *fullTrack, keepPlaying, autoPlay)
 				playerUI.SetReturnToMenuFunction(func() {
 					// Create and run a new instance of the interactive menu
-					menu := NewInteractiveMenu(ctx, client)
-					menu.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
-					if err := menu.Run(); err != nil {
+					interactiveMenu := menu.NewInteractiveMenu(ctx, client)
+					interactiveMenu.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
+					if err := interactiveMenu.Run(); err != nil {
 						fmt.Printf("Error running interactive menu: %v\n", err)
 					}
 				})
@@ -488,21 +488,21 @@ func searchAlbumsWithMenu(ctx context.Context, client *spotify.Client, query str
 	}
 
 	// Create and run a new interactive menu
-	ui := NewResultsUI("album", ctx, client, showDetails)
-	ui.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
-	ui.SetReturnToMenuFunction(func() {
+	resultsUI := ui.NewResultsUI("album", ctx, client, showDetails)
+	resultsUI.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
+	resultsUI.SetReturnToMenuFunction(func() {
 		// Create and run a new instance of the interactive menu
-		menu := NewInteractiveMenu(ctx, client)
-		menu.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
-		if err := menu.Run(); err != nil {
+		interactiveMenu := menu.NewInteractiveMenu(ctx, client)
+		interactiveMenu.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
+		if err := interactiveMenu.Run(); err != nil {
 			fmt.Printf("Error running interactive menu: %v\n", err)
 		}
 	})
-	ui.DisplayAlbumResults(ctx, client, results.Albums.Albums)
+	resultsUI.DisplayAlbumResults(ctx, client, results.Albums.Albums)
 }
 
-// searchPlaylistsWithMenu searches for playlists and displays the results with return to menu option
-func searchPlaylistsWithMenu(ctx context.Context, client *spotify.Client, query string, limit int, showDetails bool, keepPlaying bool, autoPlay bool) {
+// SearchPlaylistsWithMenu searches for playlists and displays the results with a menu interface
+func SearchPlaylistsWithMenu(ctx context.Context, client *spotify.Client, query string, limit int, showDetails bool, keepPlaying bool, autoPlay bool) {
 	// Search for playlists
 	results, err := client.Search(ctx, query, spotify.SearchTypePlaylist, spotify.Limit(limit))
 	if err != nil {
@@ -534,12 +534,12 @@ func searchPlaylistsWithMenu(ctx context.Context, client *spotify.Client, query 
 				fmt.Printf("Auto-playing the first track: %s by %s\n",
 					track.Name,
 					joinArtistNames(track.Artists))
-				playerUI := NewPlayerUI(ctx, client, *track, keepPlaying, autoPlay)
+				playerUI := player.NewPlayerUI(ctx, client, *track, keepPlaying, autoPlay)
 				playerUI.SetReturnToMenuFunction(func() {
 					// Create and run a new instance of the interactive menu
-					menu := NewInteractiveMenu(ctx, client)
-					menu.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
-					if err := menu.Run(); err != nil {
+					interactiveMenu := menu.NewInteractiveMenu(ctx, client)
+					interactiveMenu.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
+					if err := interactiveMenu.Run(); err != nil {
 						fmt.Printf("Error running interactive menu: %v\n", err)
 					}
 				})
@@ -557,21 +557,21 @@ func searchPlaylistsWithMenu(ctx context.Context, client *spotify.Client, query 
 	}
 
 	// Create and run a new interactive menu
-	ui := NewResultsUI("playlist", ctx, client, showDetails)
-	ui.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
-	ui.SetReturnToMenuFunction(func() {
+	resultsUI := ui.NewResultsUI("playlist", ctx, client, showDetails)
+	resultsUI.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
+	resultsUI.SetReturnToMenuFunction(func() {
 		// Create and run a new instance of the interactive menu
-		menu := NewInteractiveMenu(ctx, client)
-		menu.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
-		if err := menu.Run(); err != nil {
+		interactiveMenu := menu.NewInteractiveMenu(ctx, client)
+		interactiveMenu.SetKeepPlayingFlag(keepPlaying) // Set the keep playing flag
+		if err := interactiveMenu.Run(); err != nil {
 			fmt.Printf("Error running interactive menu: %v\n", err)
 		}
 	})
-	ui.DisplayPlaylistResults(ctx, client, results.Playlists.Playlists)
+	resultsUI.DisplayPlaylistResults(ctx, client, results.Playlists.Playlists)
 }
 
-// stopCurrentlyPlaying stops the currently playing track
-func stopCurrentlyPlaying(ctx context.Context, client *spotify.Client) {
+// StopCurrentlyPlaying stops the currently playing track
+func StopCurrentlyPlaying(ctx context.Context, client *spotify.Client) {
 	// Get available devices first
 	devices, err := client.PlayerDevices(ctx)
 	if err != nil {

@@ -1,5 +1,5 @@
-// Command profile gets the public profile information about a Spotify user.
-package main
+// Package profile provides functionality for getting Spotify user profile information.
+package profile
 
 import (
 	"context"
@@ -22,7 +22,8 @@ func init() {
 	flag.StringVar(userID, "user", "", "")
 }
 
-func profile() {
+// GetProfile gets and displays the public profile information about a Spotify user.
+func GetProfile() {
 	flag.Parse()
 
 	ctx := context.Background()

@@ -1,4 +1,4 @@
-module gamu.io/gspotty
+module github.com/iamgaru/gspotty
 
 go 1.23.5
 

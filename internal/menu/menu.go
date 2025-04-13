@@ -1,4 +1,4 @@
-package main
+package menu
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/iamgaru/gspotty/internal/ui"
 	"github.com/rivo/tview"
 	"github.com/zmb3/spotify/v2"
 )
@@ -194,11 +195,11 @@ func (menu *InteractiveMenu) performTrackSearch(query, artist string, limit int,
 	menu.app.Stop()
 
 	// Use the scrollable UI to display results
-	ui := NewResultsUI("track", menu.ctx, menu.client, showDetails)
-	ui.SetKeepPlayingFlag(menu.keepPlaying) // Set the keep playing flag
+	resultsUI := ui.NewResultsUI("track", menu.ctx, menu.client, showDetails)
+	resultsUI.SetKeepPlayingFlag(menu.keepPlaying)
 
 	// Set up the return to menu function
-	ui.SetReturnToMenuFunction(func() {
+	resultsUI.SetReturnToMenuFunction(func() {
 		// Create and run a new instance of the interactive menu
 		newMenu := NewInteractiveMenu(menu.ctx, menu.client)
 		newMenu.SetKeepPlayingFlag(menu.keepPlaying) // Pass the flag to the new menu
@@ -207,7 +208,7 @@ func (menu *InteractiveMenu) performTrackSearch(query, artist string, limit int,
 		}
 	})
 
-	ui.DisplayTrackResults(menu.ctx, menu.client, results.Tracks.Tracks)
+	resultsUI.DisplayTrackResults(menu.ctx, menu.client, results.Tracks.Tracks)
 }
 
 // performAlbumSearch searches for albums and displays the results
@@ -228,11 +229,11 @@ func (menu *InteractiveMenu) performAlbumSearch(query string, limit int, showDet
 	menu.app.Stop()
 
 	// Use the scrollable UI to display results
-	ui := NewResultsUI("album", menu.ctx, menu.client, showDetails)
-	ui.SetKeepPlayingFlag(menu.keepPlaying) // Set the keep playing flag
+	resultsUI := ui.NewResultsUI("album", menu.ctx, menu.client, showDetails)
+	resultsUI.SetKeepPlayingFlag(menu.keepPlaying)
 
 	// Set up the return to menu function
-	ui.SetReturnToMenuFunction(func() {
+	resultsUI.SetReturnToMenuFunction(func() {
 		// Create and run a new instance of the interactive menu
 		newMenu := NewInteractiveMenu(menu.ctx, menu.client)
 		newMenu.SetKeepPlayingFlag(menu.keepPlaying) // Pass the flag to the new menu
@@ -241,7 +242,7 @@ func (menu *InteractiveMenu) performAlbumSearch(query string, limit int, showDet
 		}
 	})
 
-	ui.DisplayAlbumResults(menu.ctx, menu.client, results.Albums.Albums)
+	resultsUI.DisplayAlbumResults(menu.ctx, menu.client, results.Albums.Albums)
 }
 
 // performPlaylistSearch searches for playlists and displays the results
@@ -262,11 +263,11 @@ func (menu *InteractiveMenu) performPlaylistSearch(query string, limit int, show
 	menu.app.Stop()
 
 	// Use the scrollable UI to display results
-	ui := NewResultsUI("playlist", menu.ctx, menu.client, showDetails)
-	ui.SetKeepPlayingFlag(menu.keepPlaying) // Set the keep playing flag
+	resultsUI := ui.NewResultsUI("playlist", menu.ctx, menu.client, showDetails)
+	resultsUI.SetKeepPlayingFlag(menu.keepPlaying)
 
 	// Set up the return to menu function
-	ui.SetReturnToMenuFunction(func() {
+	resultsUI.SetReturnToMenuFunction(func() {
 		// Create and run a new instance of the interactive menu
 		newMenu := NewInteractiveMenu(menu.ctx, menu.client)
 		newMenu.SetKeepPlayingFlag(menu.keepPlaying) // Pass the flag to the new menu
@@ -275,5 +276,5 @@ func (menu *InteractiveMenu) performPlaylistSearch(query string, limit int, show
 		}
 	})
 
-	ui.DisplayPlaylistResults(menu.ctx, menu.client, results.Playlists.Playlists)
+	resultsUI.DisplayPlaylistResults(menu.ctx, menu.client, results.Playlists.Playlists)
 }

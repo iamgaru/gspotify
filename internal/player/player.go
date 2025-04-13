@@ -1,4 +1,4 @@
-package main
+package player
 
 import (
 	"context"
@@ -13,31 +13,28 @@ import (
 
 // PlayerUI represents a UI for playing tracks and displaying track info
 type PlayerUI struct {
-	app            *tview.Application
-	flex           *tview.Flex
-	progressBar    *tview.TextView
-	infoText       *tview.TextView
-	track          spotify.FullTrack
-	client         *spotify.Client
-	ctx            context.Context
-	returnToMenu   func()
-	timer          *time.Timer
-	startTime      time.Time
-	isPlaying      bool
-	totalDuration  time.Duration
-	pausedPosition time.Duration // Add a field to store the paused position
-	keepPlaying    bool          // Flag to determine if music should keep playing when exiting
-	autoQuit       bool          // Flag to immediately exit after starting playback
-	// Playlist-related fields
+	app               *tview.Application
+	flex              *tview.Flex
+	progressBar       *tview.TextView
+	infoText          *tview.TextView
+	track             spotify.FullTrack
+	client            *spotify.Client
+	ctx               context.Context
+	returnToMenu      func()
+	timer             *time.Timer
+	startTime         time.Time
+	isPlaying         bool
+	totalDuration     time.Duration
+	pausedPosition    time.Duration
+	keepPlaying       bool
+	autoQuit          bool
 	playlistTracks    []spotify.PlaylistTrack
 	currentTrackIndex int
 	isPlaylistMode    bool
-	// Search results fields
-	searchTracks []spotify.FullTrack
-	isSearchMode bool
-	// Album-related fields
-	albumTracks []spotify.SimpleTrack
-	isAlbumMode bool
+	searchTracks      []spotify.FullTrack
+	isSearchMode      bool
+	albumTracks       []spotify.SimpleTrack
+	isAlbumMode       bool
 }
 
 // NewPlayerUI creates a new player UI
@@ -555,4 +552,9 @@ func (p *PlayerUI) updateProgressBar(elapsed time.Duration) {
 // SetReturnToMenuFunction sets the function to return to the main menu
 func (p *PlayerUI) SetReturnToMenuFunction(returnFunc func()) {
 	p.returnToMenu = returnFunc
+}
+
+// SetKeepPlayingFlag sets whether to keep playing when exiting
+func (p *PlayerUI) SetKeepPlayingFlag(keepPlaying bool) {
+	p.keepPlaying = keepPlaying
 }

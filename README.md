@@ -4,7 +4,46 @@
   <img src="gs-gopher.png" alt="GSpotify Gopher" width="300">
 </p>
 
+## Table of Contents
+
+- [Project Structure](#project-structure)
+- [Features](#features)
+- [Building and Testing](#building-and-testing)
+  - [Prerequisites](#prerequisites)
+  - [Build Commands](#build-commands)
+  - [Testing](#testing)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Command Flags](#command-flags)
+  - [Examples](#examples)
+    - [Basic Search](#basic-search)
+    - [Changing Search Type](#changing-search-type)
+    - [Additional Options](#additional-options)
+    - [Combined Options](#combined-options)
+    - [User Profile Lookup](#user-profile-lookup)
+- [Interactive Mode](#interactive-mode)
+  - [Playing Music](#playing-music)
+- [Music Player Controls](#music-player-controls)
+
 A simple command-line interface for searching and playing Spotify tracks, albums, and playlists.
+
+## Project Structure
+
+```
+gspotty/
+├── cmd/
+│   └── gspotty/          # Main application entry point
+│       └── test/         # Main package tests
+├── internal/
+│   ├── cli/             # CLI implementation
+│   ├── menu/            # Interactive menu implementation
+│   ├── player/          # Music player implementation
+│   ├── profile/         # User profile functionality
+│   └── ui/              # UI components
+├── test/                # Integration tests
+├── Makefile            # Build and test automation
+└── README.md           # Project documentation
+```
 
 ## Features
 
@@ -22,6 +61,48 @@ A simple command-line interface for searching and playing Spotify tracks, albums
 - Support for playlist, search, and album playback modes with next track functionality
 - Automatic looping in playlist, search, and album modes when "Keep Playing" is enabled
 
+## Building and Testing
+
+### Prerequisites
+
+1. Go 1.x or higher
+2. Make
+
+### Build Commands
+
+Build the application using Make:
+```bash
+# Build the binary
+make build
+
+# Clean build artifacts
+make clean
+
+# Run all tests
+make test
+
+# Show available make commands
+make help
+```
+
+Or build manually:
+```bash
+go build -o gspotty ./cmd/gspotty
+```
+
+### Testing
+
+The project includes comprehensive tests for all components. Run the tests using:
+
+```bash
+make test
+```
+
+Tests are organized into:
+- Unit tests for individual packages
+- Integration tests for end-to-end functionality
+- Mock implementations for external dependencies (e.g., Spotify API)
+
 ## Installation
 
 1. Clone the repository:
@@ -32,7 +113,7 @@ A simple command-line interface for searching and playing Spotify tracks, albums
 
 2. Build the application:
    ```
-   go build
+   make build
    ```
 
 3. Set up Spotify API credentials:
