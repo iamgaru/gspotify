@@ -40,6 +40,7 @@ gspotty/
 │   ├── player/          # Music player implementation
 │   ├── profile/         # User profile functionality
 │   └── ui/              # UI components
+├── scripts/             # Convenience scripts
 ├── test/                # Integration tests
 ├── Makefile            # Build and test automation
 └── README.md           # Project documentation
@@ -60,6 +61,7 @@ gspotty/
 - Keep music playing option even after exiting the player interface
 - Support for playlist, search, and album playback modes with next track functionality
 - Automatic looping in playlist, search, and album modes when "Keep Playing" is enabled
+- Convenience scripts for common operations
 
 ## Building and Testing
 
@@ -129,6 +131,21 @@ Tests are organized into:
 ```
 ./gspotty [options]
 ```
+
+### Convenience Scripts
+
+The project includes a `scripts` directory with helpful scripts for common operations:
+
+- `play`: A simple script to search and play music directly
+  ```bash
+  # Usage: play <search query>
+  ./scripts/play "Bohemian Rhapsody"
+  ```
+  This script automatically:
+  - Searches for tracks
+  - Plays the first result
+  - Keeps playing after exiting
+  - Handles error cases and provides helpful messages
 
 ### Command Flags
 
