@@ -33,16 +33,23 @@ A simple command-line interface for searching and playing Spotify tracks, albums
 gspotty/
 ├── cmd/
 │   └── gspotty/          # Main application entry point
-│       └── test/         # Main package tests
 ├── internal/
 │   ├── cli/             # CLI implementation
+│   ├── config/          # Configuration management
 │   ├── menu/            # Interactive menu implementation
 │   ├── player/          # Music player implementation
 │   ├── profile/         # User profile functionality
-│   └── ui/              # UI components
+│   ├── spotify/         # Spotify API integration
+│   ├── testutils/       # Test utilities and mocks
+│   ├── ui/              # UI components
+│   └── utils/           # Utility functions
 ├── scripts/             # Convenience scripts
-├── test/                # Integration tests
+│   └── play            # Script for quick music playback
+├── configs/             # Configuration files
 ├── Makefile            # Build and test automation
+├── go.mod              # Go module definition
+├── go.sum              # Go module checksums
+├── LICENSE             # Project license
 └── README.md           # Project documentation
 ```
 
