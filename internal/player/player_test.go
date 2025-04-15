@@ -1,10 +1,11 @@
-package test
+package player
 
 import (
 	"context"
 	"testing"
 	"time"
 
+	"github.com/iamgaru/gspotty/internal/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/zmb3/spotify/v2"
 )
@@ -13,7 +14,7 @@ import (
 type MockPlayerUI struct {
 	app            interface{}
 	track          spotify.FullTrack
-	client         *MockSpotifyClient
+	client         *testutils.MockSpotifyClient
 	ctx            context.Context
 	isPlaying      bool
 	totalDuration  time.Duration
@@ -29,7 +30,7 @@ func NewMockPlayerUI(ctx context.Context, client interface{}, track spotify.Full
 	return &MockPlayerUI{
 		app:           nil,
 		track:         track,
-		client:        client.(*MockSpotifyClient),
+		client:        client.(*testutils.MockSpotifyClient),
 		ctx:           ctx,
 		isPlaying:     false,
 		totalDuration: time.Duration(track.Duration) * time.Millisecond,
@@ -41,19 +42,19 @@ func NewMockPlayerUI(ctx context.Context, client interface{}, track spotify.Full
 // Play starts playback
 func (p *MockPlayerUI) Play() {
 	p.isPlaying = true
-	p.client.playCalled = true
+	p.client.PlayCalled = true
 }
 
 // Pause pauses playback
 func (p *MockPlayerUI) Pause() {
 	p.isPlaying = false
-	p.client.pauseCalled = true
+	p.client.PauseCalled = true
 }
 
 // Stop stops playback
 func (p *MockPlayerUI) Stop() {
 	p.isPlaying = false
-	p.client.pauseCalled = true
+	p.client.PauseCalled = true
 }
 
 // SetPlaylistTracks sets the playlist tracks
@@ -74,7 +75,7 @@ func (p *MockPlayerUI) SetAlbumTracks(tracks []spotify.SimpleTrack) {
 // TestPlayerUI tests the PlayerUI functionality
 func TestPlayerUI(t *testing.T) {
 	// Create a mock Spotify client
-	mockClient := &MockSpotifyClient{}
+	mockClient := &testutils.MockSpotifyClient{}
 
 	// Create a test track
 	testTrack := spotify.FullTrack{
@@ -104,17 +105,17 @@ func TestPlayerUI(t *testing.T) {
 		// Test play
 		player.Play()
 		assert.True(t, player.isPlaying)
-		assert.True(t, mockClient.playCalled)
+		assert.True(t, mockClient.PlayCalled)
 
 		// Test pause
 		player.Pause()
 		assert.False(t, player.isPlaying)
-		assert.True(t, mockClient.pauseCalled)
+		assert.True(t, mockClient.PauseCalled)
 
 		// Test stop
 		player.Stop()
 		assert.False(t, player.isPlaying)
-		assert.True(t, mockClient.pauseCalled)
+		assert.True(t, mockClient.PauseCalled)
 	})
 
 	// Test playlist mode
@@ -191,7 +192,7 @@ func TestPlayerUIWithMockContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	mockClient := &MockSpotifyClient{}
+	mockClient := &testutils.MockSpotifyClient{}
 	testTrack := spotify.FullTrack{
 		SimpleTrack: spotify.SimpleTrack{
 			ID:   "test_track_id",

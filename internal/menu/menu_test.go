@@ -1,9 +1,10 @@
-package test
+package menu
 
 import (
 	"context"
 	"testing"
 
+	"github.com/iamgaru/gspotty/internal/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -11,7 +12,7 @@ import (
 type MockMenu struct {
 	app         interface{}
 	pages       interface{}
-	client      *MockSpotifyClient
+	client      *testutils.MockSpotifyClient
 	ctx         context.Context
 	keepPlaying bool
 }
@@ -21,7 +22,7 @@ func NewMockMenu(ctx context.Context, client interface{}) *MockMenu {
 	return &MockMenu{
 		app:         struct{}{},
 		pages:       struct{}{},
-		client:      client.(*MockSpotifyClient),
+		client:      client.(interface{}).(*testutils.MockSpotifyClient),
 		ctx:         ctx,
 		keepPlaying: false,
 	}
@@ -59,7 +60,7 @@ func (menu *MockMenu) performPlaylistSearch(query string, limit int, showDetails
 
 // TestMenuErrorDisplay tests error display functionality
 func TestMenuErrorDisplay(t *testing.T) {
-	mockClient := &MockSpotifyClient{}
+	mockClient := &testutils.MockSpotifyClient{}
 	menu := NewMockMenu(context.Background(), mockClient)
 
 	// Test error display
@@ -78,7 +79,7 @@ func TestMenuWithMockContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	mockClient := &MockSpotifyClient{}
+	mockClient := &testutils.MockSpotifyClient{}
 	_ = NewMockMenu(ctx, mockClient)
 
 	// Test context cancellation
@@ -89,7 +90,7 @@ func TestMenuWithMockContext(t *testing.T) {
 
 // TestMenuNavigation tests menu navigation functionality
 func TestMenuNavigation(t *testing.T) {
-	mockClient := &MockSpotifyClient{}
+	mockClient := &testutils.MockSpotifyClient{}
 	menu := NewMockMenu(context.Background(), mockClient)
 
 	// Test menu navigation
@@ -106,7 +107,7 @@ func TestMenuNavigation(t *testing.T) {
 
 // TestMenuSearchResults tests the display of search results
 func TestMenuSearchResults(t *testing.T) {
-	mockClient := &MockSpotifyClient{}
+	mockClient := &testutils.MockSpotifyClient{}
 	menu := NewMockMenu(context.Background(), mockClient)
 
 	// Test search results display

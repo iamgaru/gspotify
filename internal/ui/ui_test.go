@@ -1,9 +1,10 @@
-package test
+package ui
 
 import (
 	"context"
 	"testing"
 
+	"github.com/iamgaru/gspotty/internal/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/zmb3/spotify/v2"
 )
@@ -49,7 +50,7 @@ func (ui *MockResultsUI) DisplayPlaylistResults(ctx context.Context, client inte
 // TestResultsUI tests the ResultsUI functionality
 func TestResultsUI(t *testing.T) {
 	// Create a mock Spotify client
-	mockClient := &MockSpotifyClient{}
+	mockClient := &testutils.MockSpotifyClient{}
 
 	// Create test data
 	testTrack := spotify.FullTrack{
@@ -128,7 +129,7 @@ func TestResultsUIWithMockContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	mockClient := &MockSpotifyClient{}
+	mockClient := &testutils.MockSpotifyClient{}
 	_ = NewMockResultsUI("track", ctx, mockClient, false)
 
 	// Test context cancellation

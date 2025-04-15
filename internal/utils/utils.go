@@ -1,4 +1,4 @@
-package test
+package utils
 
 import (
 	"fmt"
@@ -6,19 +6,20 @@ import (
 	"os"
 	"strings"
 
+	"github.com/iamgaru/gspotty/internal/testutils"
 	"github.com/zmb3/spotify/v2"
 	"golang.org/x/oauth2"
 )
 
-// formatDuration formats a duration in milliseconds to a string
-func formatDuration(ms int) string {
+// FormatDuration formats a duration in milliseconds to a string
+func FormatDuration(ms int) string {
 	minutes := ms / 60000
 	seconds := (ms % 60000) / 1000
 	return fmt.Sprintf("%d:%02d", minutes, seconds)
 }
 
-// joinArtistNames joins artist names with commas
-func joinArtistNames(artists []spotify.SimpleArtist) string {
+// JoinArtistNames joins artist names with commas
+func JoinArtistNames(artists []spotify.SimpleArtist) string {
 	if len(artists) == 0 {
 		return ""
 	}
@@ -29,8 +30,8 @@ func joinArtistNames(artists []spotify.SimpleArtist) string {
 	return strings.Join(names, ", ")
 }
 
-// openURL opens a URL in the default browser
-func openURL(urlStr string) error {
+// OpenURL opens a URL in the default browser
+func OpenURL(urlStr string) error {
 	if strings.TrimSpace(urlStr) == "" {
 		return fmt.Errorf("empty URL")
 	}
@@ -45,8 +46,8 @@ func openURL(urlStr string) error {
 	return nil
 }
 
-// validateSearchType validates the search type
-func validateSearchType(searchType string) {
+// ValidateSearchType validates the search type
+func ValidateSearchType(searchType string) {
 	validTypes := map[string]bool{
 		"track":    true,
 		"album":    true,
@@ -57,28 +58,28 @@ func validateSearchType(searchType string) {
 	}
 }
 
-// validateLimit validates the limit value
-func validateLimit(limit int) {
+// ValidateLimit validates the limit value
+func ValidateLimit(limit int) {
 	if limit < 1 || limit > 50 {
 		panic("Invalid limit")
 	}
 }
 
-// validateSearchQuery validates the search query
-func validateSearchQuery(query string) {
+// ValidateSearchQuery validates the search query
+func ValidateSearchQuery(query string) {
 	if strings.TrimSpace(query) == "" {
 		panic("Invalid search query")
 	}
 }
 
-// saveTokenToFile saves a token to a file
-func saveTokenToFile(token *oauth2.Token) error {
+// SaveTokenToFile saves a token to a file
+func SaveTokenToFile(token *oauth2.Token) error {
 	// In tests, we don't actually save the token
 	return nil
 }
 
-// loadTokenFromFile loads a token from a file
-func loadTokenFromFile() (*oauth2.Token, error) {
+// LoadTokenFromFile loads a token from a file
+func LoadTokenFromFile() (*oauth2.Token, error) {
 	// In tests, we return a mock token
 	return &oauth2.Token{
 		AccessToken:  "test_access_token",
@@ -87,15 +88,15 @@ func loadTokenFromFile() (*oauth2.Token, error) {
 	}, nil
 }
 
-// getSpotifyClient gets a Spotify client
-func getSpotifyClient(ctx interface{}) interface{} {
+// GetSpotifyClient gets a Spotify client
+func GetSpotifyClient(ctx interface{}) interface{} {
 	// In tests, we return a mock client
-	return &MockSpotifyClient{}
+	return &testutils.MockSpotifyClient{}
 }
 
-// checkEnvironmentVariables checks if required environment variables are set
-func checkEnvironmentVariables() {
-	if os.Getenv("SPOTIFY_ID") == "" || os.Getenv("SPOTIFY_SECRET") == "" {
+// CheckEnvironmentVariables checks if required environment variables are set
+func CheckEnvironmentVariables() {
+	if os.Getenv("SPOTIFY_CLIENT_ID") == "" || os.Getenv("SPOTIFY_CLIENT_SECRET") == "" || os.Getenv("SPOTIFY_REDIRECT_URI") == "" {
 		panic("Missing required environment variables")
 	}
 }
