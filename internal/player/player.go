@@ -433,63 +433,66 @@ func (p *PlayerUI) startPlayback() chan error {
 
 	p.isPlaying = true
 
-	// Start a timer to update the progress bar every second
-	if p.timer != nil {
-		p.timer.Stop()
-	}
-
-	p.timer = time.NewTimer(time.Second)
-	go func() {
-		for range p.timer.C {
-			if !p.isPlaying {
-				break
-			}
-
-			elapsed := time.Since(p.startTime)
-			if elapsed > p.totalDuration {
-				if p.isPlaylistMode {
-					if p.currentTrackIndex < len(p.playlistTracks)-1 {
-						p.playNextTrack()
-					} else if p.keepPlaying {
-						// If we're at the end of the playlist and keep playing is enabled,
-						// loop back to the beginning
-						p.currentTrackIndex = -1
-						p.playNextTrack()
-					} else {
-						p.stopPlayback()
-					}
-				} else if p.isSearchMode {
-					if p.currentTrackIndex < len(p.searchTracks)-1 {
-						p.playNextSearchTrack()
-					} else if p.keepPlaying {
-						// If we're at the end of the search results and keep playing is enabled,
-						// loop back to the beginning
-						p.currentTrackIndex = -1
-						p.playNextSearchTrack()
-					} else {
-						p.stopPlayback()
-					}
-				} else if p.isAlbumMode {
-					if p.currentTrackIndex < len(p.albumTracks)-1 {
-						p.playNextAlbumTrack()
-					} else if p.keepPlaying {
-						// If we're at the end of the album and keep playing is enabled,
-						// loop back to the beginning
-						p.currentTrackIndex = -1
-						p.playNextAlbumTrack()
-					} else {
-						p.stopPlayback()
-					}
-				} else {
-					p.stopPlayback()
-				}
-				break
-			}
-
-			p.updateProgressBar(elapsed)
-			p.timer.Reset(time.Second)
+	// Only start the progress bar timer if we're not in auto-quit mode
+	if !p.autoQuit {
+		// Start a timer to update the progress bar every second
+		if p.timer != nil {
+			p.timer.Stop()
 		}
-	}()
+
+		p.timer = time.NewTimer(time.Second)
+		go func() {
+			for range p.timer.C {
+				if !p.isPlaying {
+					break
+				}
+
+				elapsed := time.Since(p.startTime)
+				if elapsed > p.totalDuration {
+					if p.isPlaylistMode {
+						if p.currentTrackIndex < len(p.playlistTracks)-1 {
+							p.playNextTrack()
+						} else if p.keepPlaying {
+							// If we're at the end of the playlist and keep playing is enabled,
+							// loop back to the beginning
+							p.currentTrackIndex = -1
+							p.playNextTrack()
+						} else {
+							p.stopPlayback()
+						}
+					} else if p.isSearchMode {
+						if p.currentTrackIndex < len(p.searchTracks)-1 {
+							p.playNextSearchTrack()
+						} else if p.keepPlaying {
+							// If we're at the end of the search results and keep playing is enabled,
+							// loop back to the beginning
+							p.currentTrackIndex = -1
+							p.playNextSearchTrack()
+						} else {
+							p.stopPlayback()
+						}
+					} else if p.isAlbumMode {
+						if p.currentTrackIndex < len(p.albumTracks)-1 {
+							p.playNextAlbumTrack()
+						} else if p.keepPlaying {
+							// If we're at the end of the album and keep playing is enabled,
+							// loop back to the beginning
+							p.currentTrackIndex = -1
+							p.playNextAlbumTrack()
+						} else {
+							p.stopPlayback()
+						}
+					} else {
+						p.stopPlayback()
+					}
+					break
+				}
+
+				p.updateProgressBar(elapsed)
+				p.timer.Reset(time.Second)
+			}
+		}()
+	}
 
 	return resultCh
 }
