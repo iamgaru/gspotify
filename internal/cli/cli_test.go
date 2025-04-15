@@ -5,8 +5,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/iamgaru/gspotty/internal/testutils"
 	"github.com/iamgaru/gspotty/internal/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/zmb3/spotify/v2"
 )
 
 // TestEnvironmentVariables tests the environment variable checking
@@ -60,6 +62,34 @@ func TestCLI(t *testing.T) {
 
 		client := utils.GetSpotifyClient(ctx)
 		assert.NotNil(t, client)
+	})
+
+	t.Run("Search Functionality", func(t *testing.T) {
+		mockClient := &testutils.MockSpotifyClient{}
+
+		// Test track search
+		t.Run("Track Search", func(t *testing.T) {
+			query := "test track"
+			_, err := mockClient.Search(context.Background(), query, spotify.SearchTypeTrack)
+			assert.NoError(t, err)
+			assert.True(t, mockClient.SearchCalled)
+		})
+
+		// Test album search
+		t.Run("Album Search", func(t *testing.T) {
+			query := "test album"
+			_, err := mockClient.Search(context.Background(), query, spotify.SearchTypeAlbum)
+			assert.NoError(t, err)
+			assert.True(t, mockClient.SearchCalled)
+		})
+
+		// Test playlist search
+		t.Run("Playlist Search", func(t *testing.T) {
+			query := "test playlist"
+			_, err := mockClient.Search(context.Background(), query, spotify.SearchTypePlaylist)
+			assert.NoError(t, err)
+			assert.True(t, mockClient.SearchCalled)
+		})
 	})
 }
 

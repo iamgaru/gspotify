@@ -211,3 +211,54 @@ func TestPlayerUIWithMockContext(t *testing.T) {
 	// The player should handle context cancellation gracefully
 	// We can't easily test the visual output, but we can verify the function doesn't panic
 }
+
+func TestPlayer(t *testing.T) {
+	ctx := context.Background()
+	mockClient := &testutils.MockSpotifyClient{}
+
+	t.Run("Playback Control", func(t *testing.T) {
+		// Test play
+		t.Run("Play", func(t *testing.T) {
+			err := mockClient.Play(ctx)
+			assert.NoError(t, err)
+			assert.True(t, mockClient.PlayCalled)
+		})
+
+		// Test pause
+		t.Run("Pause", func(t *testing.T) {
+			err := mockClient.Pause(ctx)
+			assert.NoError(t, err)
+			assert.True(t, mockClient.PauseCalled)
+		})
+
+		// Test next
+		t.Run("Next", func(t *testing.T) {
+			err := mockClient.Next(ctx)
+			assert.NoError(t, err)
+			assert.True(t, mockClient.NextCalled)
+		})
+
+		// Test previous
+		t.Run("Previous", func(t *testing.T) {
+			err := mockClient.Previous(ctx)
+			assert.NoError(t, err)
+			assert.True(t, mockClient.PreviousCalled)
+		})
+
+		// Test seek
+		t.Run("Seek", func(t *testing.T) {
+			position := 30 * time.Second
+			err := mockClient.Seek(ctx, position)
+			assert.NoError(t, err)
+			assert.True(t, mockClient.SeekCalled)
+		})
+
+		// Test volume
+		t.Run("Volume", func(t *testing.T) {
+			volume := 50
+			err := mockClient.SetVolume(ctx, volume)
+			assert.NoError(t, err)
+			assert.True(t, mockClient.SetVolumeCalled)
+		})
+	})
+}
