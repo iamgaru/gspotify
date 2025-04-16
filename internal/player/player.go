@@ -117,6 +117,27 @@ func NewPlayerUI(ctx context.Context, client *spotify.Client, track spotify.Full
 			}
 		}
 
+		// Handle 'p' key for previous track in playlist mode, search mode, or album mode
+		if event.Rune() == 'p' {
+			if playerUI.isPlaylistMode {
+				playerUI.playPreviousTrack()
+			} else if playerUI.isSearchMode {
+				playerUI.playPreviousSearchTrack()
+			} else if playerUI.isAlbumMode {
+				playerUI.playPreviousAlbumTrack()
+			}
+		}
+
+		// Handle left arrow key to seek backward 10 seconds
+		if event.Key() == tcell.KeyLeft {
+			playerUI.seekBackward(10 * time.Second)
+		}
+
+		// Handle right arrow key to seek forward 10 seconds
+		if event.Key() == tcell.KeyRight {
+			playerUI.seekForward(10 * time.Second)
+		}
+
 		return event
 	})
 
@@ -412,63 +433,66 @@ func (p *PlayerUI) startPlayback() chan error {
 
 	p.isPlaying = true
 
-	// Start a timer to update the progress bar every second
-	if p.timer != nil {
-		p.timer.Stop()
-	}
-
-	p.timer = time.NewTimer(time.Second)
-	go func() {
-		for range p.timer.C {
-			if !p.isPlaying {
-				break
-			}
-
-			elapsed := time.Since(p.startTime)
-			if elapsed > p.totalDuration {
-				if p.isPlaylistMode {
-					if p.currentTrackIndex < len(p.playlistTracks)-1 {
-						p.playNextTrack()
-					} else if p.keepPlaying {
-						// If we're at the end of the playlist and keep playing is enabled,
-						// loop back to the beginning
-						p.currentTrackIndex = -1
-						p.playNextTrack()
-					} else {
-						p.stopPlayback()
-					}
-				} else if p.isSearchMode {
-					if p.currentTrackIndex < len(p.searchTracks)-1 {
-						p.playNextSearchTrack()
-					} else if p.keepPlaying {
-						// If we're at the end of the search results and keep playing is enabled,
-						// loop back to the beginning
-						p.currentTrackIndex = -1
-						p.playNextSearchTrack()
-					} else {
-						p.stopPlayback()
-					}
-				} else if p.isAlbumMode {
-					if p.currentTrackIndex < len(p.albumTracks)-1 {
-						p.playNextAlbumTrack()
-					} else if p.keepPlaying {
-						// If we're at the end of the album and keep playing is enabled,
-						// loop back to the beginning
-						p.currentTrackIndex = -1
-						p.playNextAlbumTrack()
-					} else {
-						p.stopPlayback()
-					}
-				} else {
-					p.stopPlayback()
-				}
-				break
-			}
-
-			p.updateProgressBar(elapsed)
-			p.timer.Reset(time.Second)
+	// Only start the progress bar timer if we're not in auto-quit mode
+	if !p.autoQuit {
+		// Start a timer to update the progress bar every second
+		if p.timer != nil {
+			p.timer.Stop()
 		}
-	}()
+
+		p.timer = time.NewTimer(time.Second)
+		go func() {
+			for range p.timer.C {
+				if !p.isPlaying {
+					break
+				}
+
+				elapsed := time.Since(p.startTime)
+				if elapsed > p.totalDuration {
+					if p.isPlaylistMode {
+						if p.currentTrackIndex < len(p.playlistTracks)-1 {
+							p.playNextTrack()
+						} else if p.keepPlaying {
+							// If we're at the end of the playlist and keep playing is enabled,
+							// loop back to the beginning
+							p.currentTrackIndex = -1
+							p.playNextTrack()
+						} else {
+							p.stopPlayback()
+						}
+					} else if p.isSearchMode {
+						if p.currentTrackIndex < len(p.searchTracks)-1 {
+							p.playNextSearchTrack()
+						} else if p.keepPlaying {
+							// If we're at the end of the search results and keep playing is enabled,
+							// loop back to the beginning
+							p.currentTrackIndex = -1
+							p.playNextSearchTrack()
+						} else {
+							p.stopPlayback()
+						}
+					} else if p.isAlbumMode {
+						if p.currentTrackIndex < len(p.albumTracks)-1 {
+							p.playNextAlbumTrack()
+						} else if p.keepPlaying {
+							// If we're at the end of the album and keep playing is enabled,
+							// loop back to the beginning
+							p.currentTrackIndex = -1
+							p.playNextAlbumTrack()
+						} else {
+							p.stopPlayback()
+						}
+					} else {
+						p.stopPlayback()
+					}
+					break
+				}
+
+				p.updateProgressBar(elapsed)
+				p.timer.Reset(time.Second)
+			}
+		}()
+	}
 
 	return resultCh
 }
@@ -557,4 +581,138 @@ func (p *PlayerUI) SetReturnToMenuFunction(returnFunc func()) {
 // SetKeepPlayingFlag sets whether to keep playing when exiting
 func (p *PlayerUI) SetKeepPlayingFlag(keepPlaying bool) {
 	p.keepPlaying = keepPlaying
+}
+
+// playPreviousTrack plays the previous track in the playlist
+func (p *PlayerUI) playPreviousTrack() {
+	if !p.isPlaylistMode {
+		return
+	}
+
+	// If we're at the beginning of the playlist
+	if p.currentTrackIndex <= 0 {
+		if p.keepPlaying {
+			// Loop to the end
+			p.currentTrackIndex = len(p.playlistTracks)
+		} else {
+			return
+		}
+	}
+
+	p.currentTrackIndex--
+	previousTrack := p.playlistTracks[p.currentTrackIndex].Track
+	p.track = previousTrack
+	p.totalDuration = time.Duration(previousTrack.Duration) * time.Millisecond
+	p.pausedPosition = 0
+	p.startTime = time.Now()
+	p.updateInfoText()
+	p.startPlayback()
+}
+
+// playPreviousSearchTrack plays the previous track in the search results
+func (p *PlayerUI) playPreviousSearchTrack() {
+	if !p.isSearchMode || p.currentTrackIndex <= 0 {
+		return
+	}
+
+	p.currentTrackIndex--
+	previousTrack := p.searchTracks[p.currentTrackIndex]
+	p.track = previousTrack
+	p.totalDuration = time.Duration(previousTrack.Duration) * time.Millisecond
+	p.pausedPosition = 0
+	p.startTime = time.Now()
+	p.updateInfoText()
+	p.startPlayback()
+}
+
+// playPreviousAlbumTrack plays the previous track in the album
+func (p *PlayerUI) playPreviousAlbumTrack() {
+	if !p.isAlbumMode {
+		return
+	}
+
+	// If we're at the beginning of the album
+	if p.currentTrackIndex <= 0 {
+		if p.keepPlaying {
+			// Loop to the end
+			p.currentTrackIndex = len(p.albumTracks)
+		} else {
+			return
+		}
+	}
+
+	p.currentTrackIndex--
+	previousTrack := p.albumTracks[p.currentTrackIndex]
+
+	// Get the full track info
+	fullTrack, err := p.client.GetTrack(p.ctx, previousTrack.ID)
+	if err != nil {
+		p.app.QueueUpdateDraw(func() {
+			p.progressBar.SetText(fmt.Sprintf("[red]Error getting previous track: %v[white]", err))
+		})
+		return
+	}
+
+	p.track = *fullTrack
+	p.totalDuration = time.Duration(fullTrack.Duration) * time.Millisecond
+	p.pausedPosition = 0
+	p.startTime = time.Now()
+	p.updateInfoText()
+	p.startPlayback()
+}
+
+// seekForward seeks forward by the specified duration
+func (p *PlayerUI) seekForward(duration time.Duration) {
+	if !p.isPlaying {
+		return
+	}
+
+	// Calculate new position
+	elapsed := time.Since(p.startTime)
+	newPosition := elapsed + duration
+
+	// Don't seek beyond the end of the track
+	if newPosition > p.totalDuration {
+		newPosition = p.totalDuration
+	}
+
+	// Seek to the new position
+	err := p.client.Seek(p.ctx, int(newPosition.Milliseconds()))
+	if err != nil {
+		p.app.QueueUpdateDraw(func() {
+			p.progressBar.SetText(fmt.Sprintf("[red]Error seeking forward: %v[white]", err))
+		})
+		return
+	}
+
+	// Update the start time to reflect the new position
+	p.startTime = time.Now().Add(-newPosition)
+}
+
+// seekBackward seeks backward by the specified duration
+func (p *PlayerUI) seekBackward(duration time.Duration) {
+	if !p.isPlaying {
+		return
+	}
+
+	// Calculate new position
+	elapsed := time.Since(p.startTime)
+	newPosition := elapsed - duration
+
+	// Don't seek before the start of the track
+	if newPosition < 0 {
+		newPosition = 0
+	}
+
+	// Seek to the new position
+	err := p.client.Seek(p.ctx, int(newPosition.Milliseconds()))
+	if err != nil {
+		p.app.QueueUpdateDraw(func() {
+			p.progressBar.SetText(fmt.Sprintf("[red]Error seeking backward: %v[white]", err))
+		})
+		return
+	}
+
+	// Update the start time to reflect the new position
+	p.startTime = time.Now().Add(-newPosition)
 }

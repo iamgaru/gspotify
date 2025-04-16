@@ -1,4 +1,4 @@
-package test
+package testutils
 
 import (
 	"context"
@@ -7,59 +7,62 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
-// MockSpotifyClient implements a mock Spotify client for testing
+// MockSpotifyClient is a mock implementation of the Spotify client for testing
 type MockSpotifyClient struct {
-	playCalled        bool
-	pauseCalled       bool
-	nextCalled        bool
-	previousCalled    bool
-	seekCalled        bool
-	volumeCalled      bool
-	searchCalled      bool
-	getTrackCalled    bool
-	getAlbumCalled    bool
-	getPlaylistCalled bool
+	PlayCalled        bool
+	PauseCalled       bool
+	NextCalled        bool
+	PreviousCalled    bool
+	SeekCalled        bool
+	SetVolumeCalled   bool
+	GetPlaybackCalled bool
+	CurrentTrack      *spotify.FullTrack
+	CurrentState      *spotify.PlayerState
+	SearchCalled      bool
+	GetTrackCalled    bool
+	GetAlbumCalled    bool
+	GetPlaylistCalled bool
 }
 
 // Play implements the Play method
 func (m *MockSpotifyClient) Play(ctx context.Context) error {
-	m.playCalled = true
+	m.PlayCalled = true
 	return nil
 }
 
 // Pause implements the Pause method
 func (m *MockSpotifyClient) Pause(ctx context.Context) error {
-	m.pauseCalled = true
+	m.PauseCalled = true
 	return nil
 }
 
 // Next implements the Next method
 func (m *MockSpotifyClient) Next(ctx context.Context) error {
-	m.nextCalled = true
+	m.NextCalled = true
 	return nil
 }
 
 // Previous implements the Previous method
 func (m *MockSpotifyClient) Previous(ctx context.Context) error {
-	m.previousCalled = true
+	m.PreviousCalled = true
 	return nil
 }
 
 // Seek implements the Seek method
 func (m *MockSpotifyClient) Seek(ctx context.Context, position time.Duration) error {
-	m.seekCalled = true
+	m.SeekCalled = true
 	return nil
 }
 
 // SetVolume implements the SetVolume method
 func (m *MockSpotifyClient) SetVolume(ctx context.Context, volume int) error {
-	m.volumeCalled = true
+	m.SetVolumeCalled = true
 	return nil
 }
 
 // Search implements the Search method
 func (m *MockSpotifyClient) Search(ctx context.Context, query string, searchType spotify.SearchType, opts ...spotify.RequestOption) (*spotify.SearchResult, error) {
-	m.searchCalled = true
+	m.SearchCalled = true
 	return &spotify.SearchResult{
 		Tracks: &spotify.FullTrackPage{
 			Tracks: []spotify.FullTrack{
@@ -105,7 +108,7 @@ func (m *MockSpotifyClient) Search(ctx context.Context, query string, searchType
 
 // GetTrack implements the GetTrack method
 func (m *MockSpotifyClient) GetTrack(ctx context.Context, id spotify.ID) (*spotify.FullTrack, error) {
-	m.getTrackCalled = true
+	m.GetTrackCalled = true
 	return &spotify.FullTrack{
 		SimpleTrack: spotify.SimpleTrack{
 			ID:   id,
@@ -123,7 +126,7 @@ func (m *MockSpotifyClient) GetTrack(ctx context.Context, id spotify.ID) (*spoti
 
 // GetAlbum implements the GetAlbum method
 func (m *MockSpotifyClient) GetAlbum(ctx context.Context, id spotify.ID) (*spotify.FullAlbum, error) {
-	m.getAlbumCalled = true
+	m.GetAlbumCalled = true
 	return &spotify.FullAlbum{
 		SimpleAlbum: spotify.SimpleAlbum{
 			ID:   id,
@@ -137,7 +140,7 @@ func (m *MockSpotifyClient) GetAlbum(ctx context.Context, id spotify.ID) (*spoti
 
 // GetPlaylist implements the GetPlaylist method
 func (m *MockSpotifyClient) GetPlaylist(ctx context.Context, id spotify.ID) (*spotify.FullPlaylist, error) {
-	m.getPlaylistCalled = true
+	m.GetPlaylistCalled = true
 	return &spotify.FullPlaylist{
 		SimplePlaylist: spotify.SimplePlaylist{
 			ID:   id,
@@ -177,6 +180,19 @@ func (m *MockSpotifyClient) GetAlbumTracks(ctx context.Context, id spotify.ID) (
 				},
 				Duration: 180000,
 			},
+		},
+	}, nil
+}
+
+// GetUsersPublicProfile implements the GetUsersPublicProfile method
+func (m *MockSpotifyClient) GetUsersPublicProfile(ctx context.Context, userID spotify.ID) (*spotify.User, error) {
+	return &spotify.User{
+		ID:          string(userID),
+		DisplayName: "Test User",
+		URI:         spotify.URI("spotify:user:testuser"),
+		Endpoint:    "users/testuser",
+		Followers: spotify.Followers{
+			Count: 100,
 		},
 	}, nil
 }

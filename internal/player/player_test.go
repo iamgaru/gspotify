@@ -1,10 +1,11 @@
-package test
+package player
 
 import (
 	"context"
 	"testing"
 	"time"
 
+	"github.com/iamgaru/gspotty/internal/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/zmb3/spotify/v2"
 )
@@ -13,7 +14,7 @@ import (
 type MockPlayerUI struct {
 	app            interface{}
 	track          spotify.FullTrack
-	client         *MockSpotifyClient
+	client         *testutils.MockSpotifyClient
 	ctx            context.Context
 	isPlaying      bool
 	totalDuration  time.Duration
@@ -29,7 +30,7 @@ func NewMockPlayerUI(ctx context.Context, client interface{}, track spotify.Full
 	return &MockPlayerUI{
 		app:           nil,
 		track:         track,
-		client:        client.(*MockSpotifyClient),
+		client:        client.(*testutils.MockSpotifyClient),
 		ctx:           ctx,
 		isPlaying:     false,
 		totalDuration: time.Duration(track.Duration) * time.Millisecond,
@@ -41,19 +42,19 @@ func NewMockPlayerUI(ctx context.Context, client interface{}, track spotify.Full
 // Play starts playback
 func (p *MockPlayerUI) Play() {
 	p.isPlaying = true
-	p.client.playCalled = true
+	p.client.PlayCalled = true
 }
 
 // Pause pauses playback
 func (p *MockPlayerUI) Pause() {
 	p.isPlaying = false
-	p.client.pauseCalled = true
+	p.client.PauseCalled = true
 }
 
 // Stop stops playback
 func (p *MockPlayerUI) Stop() {
 	p.isPlaying = false
-	p.client.pauseCalled = true
+	p.client.PauseCalled = true
 }
 
 // SetPlaylistTracks sets the playlist tracks
@@ -74,7 +75,7 @@ func (p *MockPlayerUI) SetAlbumTracks(tracks []spotify.SimpleTrack) {
 // TestPlayerUI tests the PlayerUI functionality
 func TestPlayerUI(t *testing.T) {
 	// Create a mock Spotify client
-	mockClient := &MockSpotifyClient{}
+	mockClient := &testutils.MockSpotifyClient{}
 
 	// Create a test track
 	testTrack := spotify.FullTrack{
@@ -104,17 +105,17 @@ func TestPlayerUI(t *testing.T) {
 		// Test play
 		player.Play()
 		assert.True(t, player.isPlaying)
-		assert.True(t, mockClient.playCalled)
+		assert.True(t, mockClient.PlayCalled)
 
 		// Test pause
 		player.Pause()
 		assert.False(t, player.isPlaying)
-		assert.True(t, mockClient.pauseCalled)
+		assert.True(t, mockClient.PauseCalled)
 
 		// Test stop
 		player.Stop()
 		assert.False(t, player.isPlaying)
-		assert.True(t, mockClient.pauseCalled)
+		assert.True(t, mockClient.PauseCalled)
 	})
 
 	// Test playlist mode
@@ -191,7 +192,7 @@ func TestPlayerUIWithMockContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	mockClient := &MockSpotifyClient{}
+	mockClient := &testutils.MockSpotifyClient{}
 	testTrack := spotify.FullTrack{
 		SimpleTrack: spotify.SimpleTrack{
 			ID:   "test_track_id",
@@ -209,4 +210,55 @@ func TestPlayerUIWithMockContext(t *testing.T) {
 	cancel()
 	// The player should handle context cancellation gracefully
 	// We can't easily test the visual output, but we can verify the function doesn't panic
+}
+
+func TestPlayer(t *testing.T) {
+	ctx := context.Background()
+	mockClient := &testutils.MockSpotifyClient{}
+
+	t.Run("Playback Control", func(t *testing.T) {
+		// Test play
+		t.Run("Play", func(t *testing.T) {
+			err := mockClient.Play(ctx)
+			assert.NoError(t, err)
+			assert.True(t, mockClient.PlayCalled)
+		})
+
+		// Test pause
+		t.Run("Pause", func(t *testing.T) {
+			err := mockClient.Pause(ctx)
+			assert.NoError(t, err)
+			assert.True(t, mockClient.PauseCalled)
+		})
+
+		// Test next
+		t.Run("Next", func(t *testing.T) {
+			err := mockClient.Next(ctx)
+			assert.NoError(t, err)
+			assert.True(t, mockClient.NextCalled)
+		})
+
+		// Test previous
+		t.Run("Previous", func(t *testing.T) {
+			err := mockClient.Previous(ctx)
+			assert.NoError(t, err)
+			assert.True(t, mockClient.PreviousCalled)
+		})
+
+		// Test seek
+		t.Run("Seek", func(t *testing.T) {
+			position := 30 * time.Second
+			err := mockClient.Seek(ctx, position)
+			assert.NoError(t, err)
+			assert.True(t, mockClient.SeekCalled)
+		})
+
+		// Test volume
+		t.Run("Volume", func(t *testing.T) {
+			volume := 50
+			err := mockClient.SetVolume(ctx, volume)
+			assert.NoError(t, err)
+			assert.True(t, mockClient.SetVolumeCalled)
+		})
+	})
 }

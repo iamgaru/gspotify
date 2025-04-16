@@ -14,6 +14,7 @@
   - [Testing](#testing)
 - [Installation](#installation)
 - [Usage](#usage)
+  - [Authentication](#authentication)
   - [Command Flags](#command-flags)
   - [Examples](#examples)
     - [Basic Search](#basic-search)
@@ -24,6 +25,19 @@
 - [Interactive Mode](#interactive-mode)
   - [Playing Music](#playing-music)
 - [Music Player Controls](#music-player-controls)
+  - [Keyboard Controls](#keyboard-controls)
+  - [Playback Modes](#playback-modes)
+  - [Device Management](#device-management)
+- [Output Format](#output-format)
+  - [Search Results Display](#search-results-display)
+  - [Player Interface](#player-interface)
+  - [Error Handling](#error-handling)
+- [Notes](#notes)
+- [Quick Play Script](#quick-play-script)
+  - [Installation](#installation-1)
+  - [Usage](#usage-1)
+- [License](#license)
+- [Author & Version](#author--version)
 
 A simple command-line interface for searching and playing Spotify tracks, albums, and playlists.
 
@@ -33,16 +47,22 @@ A simple command-line interface for searching and playing Spotify tracks, albums
 gspotty/
 ├── cmd/
 │   └── gspotty/          # Main application entry point
-│       └── test/         # Main package tests
 ├── internal/
-│   ├── cli/             # CLI implementation
+│   ├── cli/             # CLI implementation and Spotify client integration
+│   ├── config/          # Configuration management
 │   ├── menu/            # Interactive menu implementation
 │   ├── player/          # Music player implementation
 │   ├── profile/         # User profile functionality
-│   └── ui/              # UI components
+│   ├── testutils/       # Test utilities and mocks
+│   ├── ui/              # UI components
+│   └── utils/           # Utility functions
 ├── scripts/             # Convenience scripts
-├── test/                # Integration tests
+│   └── play            # Script for quick music playback
+├── configs/             # Configuration files
 ├── Makefile            # Build and test automation
+├── go.mod              # Go module definition
+├── go.sum              # Go module checksums
+├── LICENSE             # Project license
 └── README.md           # Project documentation
 ```
 
@@ -57,11 +77,17 @@ gspotty/
 - Return to menu option after viewing search results
 - Simple single-letter flags for easy command usage
 - User profile lookup functionality
-- Built-in music player with playback controls
+- Built-in music player with playback controls:
+  - Play/Pause
+  - Next/Previous track
+  - Seek position
+  - Volume control
 - Keep music playing option even after exiting the player interface
 - Support for playlist, search, and album playback modes with next track functionality
 - Automatic looping in playlist, search, and album modes when "Keep Playing" is enabled
 - Convenience scripts for common operations
+- Secure token management with automatic refresh
+- Cross-platform support (Linux, Windows, macOS)
 
 ## Building and Testing
 
@@ -124,7 +150,10 @@ Tests are organized into:
    export SPOTIFY_SECRET=your_client_secret
    ```
 
-4. **Authorization**: On first use, you will be prompted to authorize the application to access your Spotify account. This is a one-time process where a browser window will open for you to sign in to Spotify and grant the necessary permissions.
+4. **Authorization**: The application uses a two-step authentication process:
+   - First-time use: You'll be prompted to authorize the application. A browser window will open for you to sign in to Spotify and grant permissions.
+   - Subsequent uses: The application will automatically refresh your token using the refresh token.
+   - The application securely stores your tokens in your home directory with restricted permissions.
 
 ## Usage
 
@@ -132,20 +161,13 @@ Tests are organized into:
 ./gspotty [options]
 ```
 
-### Convenience Scripts
+### Authentication
 
-The project includes a `scripts` directory with helpful scripts for common operations:
+The application uses a combination of authentication flows:
+- Client Credentials Flow: For accessing public data (user profiles, search)
+- Authorization Code Flow: For controlling playback and accessing private data
 
-- `play`: A simple script to search and play music directly
-  ```bash
-  # Usage: play <search query>
-  ./scripts/play "Bohemian Rhapsody"
-  ```
-  This script automatically:
-  - Searches for tracks
-  - Plays the first result
-  - Keeps playing after exiting
-  - Handles error cases and provides helpful messages
+Your tokens are securely stored in `~/.spotify_token.json` with restricted permissions (0600).
 
 ### Command Flags
 
@@ -162,8 +184,6 @@ The project includes a `scripts` directory with helpful scripts for common opera
 | `-p` | Automatically play the first result and exit | false |
 | `-u` | Spotify user ID to look up profile information | Optional |
 | `-s` | Stop the currently playing track | false |
-
-> **Note**: Long-form flags (e.g., `--type`, `--query`, `--artist`) are also supported for backward compatibility but are not documented in the help text.
 
 ### Examples
 
@@ -282,82 +302,85 @@ You'll then be taken to the player interface where you can control playback.
 
 ## Music Player Controls
 
-When playing a track, the player interface provides the following controls:
+The player interface provides a rich set of controls for managing playback:
+
+### Keyboard Controls
 
 | Key | Function |
 |-----|----------|
 | Space | Play/Pause the current track |
 | k | Toggle "Keep Playing" mode (ON/OFF) |
 | n | Play next track (in playlist, search, or album mode) |
+| p | Play previous track (in playlist, search, or album mode) |
+| → | Seek forward 10 seconds |
+| ← | Seek backward 10 seconds |
+| ↑ | Increase volume |
+| ↓ | Decrease volume |
 | Esc | Return to the previous menu |
 
 ### Playback Modes
 
-The player supports different playback modes depending on how you started playback:
+The player supports three distinct playback modes:
 
 #### Playlist Mode
 - Automatically enabled when playing from a playlist
-- Press 'n' to play the next track in the playlist
-- When reaching the end of the playlist:
-  - If "Keep Playing" is ON: Loops back to the beginning
-  - If "Keep Playing" is OFF: Stops playback
+- Maintains playlist order
+- Supports next/previous track navigation
+- Loops back to beginning when "Keep Playing" is enabled
 
 #### Search Mode
-- Automatically enabled when playing from search results
-- Press 'n' to play the next track from search results
-- When reaching the end of search results:
-  - If "Keep Playing" is ON: Loops back to the beginning
-  - If "Keep Playing" is OFF: Stops playback
+- Enabled when playing from search results
+- Maintains search result order
+- Supports next/previous track navigation
+- Loops back to beginning when "Keep Playing" is enabled
 
 #### Album Mode
-- Automatically enabled when playing from an album
-- Press 'n' to play the next track in the album
-- When reaching the end of the album:
-  - If "Keep Playing" is ON: Loops back to the beginning
-  - If "Keep Playing" is OFF: Stops playback
+- Enabled when playing from an album
+- Maintains album track order
+- Supports next/previous track navigation
+- Loops back to beginning when "Keep Playing" is enabled
 
-### Keep Playing Mode
+### Device Management
 
-The "Keep Playing" feature allows you to continue listening to the current track even after exiting the player interface. This is useful when you want to continue browsing or searching while the music plays.
+The player automatically:
+- Detects available Spotify devices
+- Uses the active device if available
+- Falls back to the first available device if no active device is found
+- Displays device status in the player interface
 
-To use this feature:
-1. While in the player interface, press `k` to toggle "Keep Playing" mode ON
-2. The status will be displayed in the player interface
-3. Press Esc to return to the menu while music continues playing
-4. To stop playback later, return to the player interface and press Space to pause
+## Output Format
 
-Example workflow:
-```
-1. Search for a track in interactive mode
-2. Select a track to play
-3. In the player interface, press 'k' to enable Keep Playing
-4. Press Esc to return to the menu while music continues
-5. Continue browsing or searching while listening
-```
+The application uses a terminal-based UI with the following features:
 
-## Output
+### Search Results Display
+- Color-coded output for better readability
+- Tabular format with sortable columns
+- Detailed view option with additional track/album/playlist information
+- Interactive selection with mouse and keyboard support
 
-The application displays results in a tabular format with relevant information for each type of search:
+### Player Interface
+- Real-time progress bar
+- Current track information
+- Playback controls
+- Device status
+- Volume indicator
+- "Keep Playing" status
 
-- **Tracks**: ID, Track Name, Artist, Album, Popularity, Spotify Link, URI
-- **Albums**: ID, Album Name, Artist, Release Date, Total Tracks, Spotify Link, URI
-- **Playlists**: ID, Playlist Name, Owner, Total Tracks, Spotify Link, URI
-
-When the `-d` flag is used or "Show Detailed Results" is selected in interactive mode, additional information is displayed:
-
-- **Tracks**: Audio features (Energy, Danceability, Valence, Tempo)
-- **Albums**: First few tracks
-- **Playlists**: Description and sample tracks
+### Error Handling
+- Clear error messages for common issues
+- Device availability warnings
+- Authentication error handling
+- Network error recovery
 
 ## Notes
 
-- The application uses client credentials flow for authentication, so it can only access public data.
-- The Spotify API has rate limits, so excessive usage may result in temporary blocks.
-- You need to obtain your own Spotify API credentials from the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/).
-- **First-time Authorization**: When you first use the application, you will be prompted to authorize it to play Spotify tracks. A browser window will open automatically, and you'll need to log in to your Spotify account and approve the requested permissions. This authorization only happens once, and the app will save your credentials for future use.
-- Music playback requires an active Spotify device (such as the Spotify desktop app or web player).
-- The application does not support playback of podcast episodes. If a playlist contains podcast episodes, they will be skipped during playback.
-- Search results are limited to a maximum of 50 items per query.
+- The application requires an active Spotify device (desktop app or web player)
+- Playback controls require proper device authorization
+- Token refresh is handled automatically
+- The application uses secure token storage with restricted file permissions
+- Rate limiting is handled gracefully with appropriate error messages
+- The application supports both mouse and keyboard interaction
+- Podcast episodes in playlists are skipped during playback
 
 ## Quick Play Script
 
@@ -404,7 +427,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ```
 +----------------+------------------+
 | Author         | Nick Conolly     |
-| Version        | 0.2.1            |
+| Version        | 0.2.3            |
 | GitHub         | iamgaru          |
 +----------------+------------------+
 ```
