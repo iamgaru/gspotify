@@ -427,7 +427,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ```
 +----------------+------------------+
 | Author         | Nick Conolly     |
-| Version        | 0.2.1            |
+| Version        | 0.2.3            |
 | GitHub         | iamgaru          |
 +----------------+------------------+
 ```
