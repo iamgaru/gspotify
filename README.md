@@ -3,6 +3,7 @@
 <p align="center">
   <img src="assets/images/gs-gopher.png" alt="GSpotify Gopher" width="300">
 </p>
+</p>
 
 <p align="center">
   <img src="assets/images/dubstep-playlist-search.png" alt="Playlist Search" width="800">
