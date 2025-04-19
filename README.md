@@ -9,19 +9,19 @@
 Here are some examples of gspotty in action:
 
 <p align="center">
-  <img src="assets/images/dubstep-playlist-search.png" alt="Playlist Search" width="600">
+  <img src="assets/images/dubstep-playlist-search.png" alt="Playlist Search" width="800">
   <br>
   <em>Searching for dubstep playlists</em>
 </p>
 
 <p align="center">
-  <img src="assets/images/quick-play.png" alt="Quick Play" width="600">
+  <img src="assets/images/quick-play.png" alt="Quick Play" width="800">
   <br>
   <em>Quick play feature in action</em>
 </p>
 
 <p align="center">
-  <img src="assets/images/multiple-players.png" alt="Multiple Players" width="600">
+  <img src="assets/images/multiple-players.png" alt="Multiple Players" width="800">
   <br>
   <em>Support for multiple players</em>
 </p>
@@ -67,6 +67,8 @@ A simple command-line interface for searching and playing Spotify tracks, albums
 
 ```
 gspotty/
+├── assets/
+│   └── images/          # Application images and screenshots
 ├── cmd/
 │   └── gspotty/          # Main application entry point
 ├── internal/
