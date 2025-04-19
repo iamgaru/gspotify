@@ -129,6 +129,18 @@ make clean
 # Run all tests
 make test
 
+# Format code
+make fmt
+
+# Run go vet
+make vet
+
+# Install dependencies
+make deps
+
+# Build and run the application
+make run
+
 # Show available make commands
 make help
 ```
@@ -159,10 +171,15 @@ Tests are organized into:
    cd gspotty
    ```
 
-2. Build the application:
+2. Install the application:
    ```
-   make build
+   make install
    ```
+   This will:
+   - Build the binary
+   - Install it to `/usr/local/bin/`
+   - Make the play script executable
+   - Install the play script to `/usr/local/bin/`
 
 3. Set up Spotify API credentials:
    ```
