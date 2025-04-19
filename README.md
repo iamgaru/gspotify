@@ -425,6 +425,15 @@ For a more convenient way to play music, you can use the included "play" bash sc
 
 ### Installation
 
+#### Using Makefile (Recommended)
+The play script is automatically installed when you run:
+```
+make install
+```
+
+#### Manual Installation
+Alternatively, you can install it manually:
+
 1. Make the script executable:
    ```
    chmod +x play
