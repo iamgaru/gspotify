@@ -1,7 +1,26 @@
 # gspotty
 
 <p align="center">
-  <img src="gs-gopher.png" alt="GSpotify Gopher" width="300">
+  <img src="assets/images/gs-gopher.png" alt="GSpotify Gopher" width="300">
+</p>
+</p>
+
+<p align="center">
+  <img src="assets/images/dubstep-playlist-search.png" alt="Playlist Search" width="800">
+  <br>
+  <em>Searching for dubstep playlists</em>
+</p>
+
+<p align="center">
+  <img src="assets/images/multiple-players.png" alt="Multiple Players" width="800">
+  <br>
+  <em>Support for multiple players</em>
+</p>
+
+<p align="center">
+  <img src="assets/images/quick-play.png" alt="Quick Play" width="800">
+  <br>
+  <em>Quick play feature in action</em>
 </p>
 
 ## Table of Contents
@@ -45,6 +64,8 @@ A simple command-line interface for searching and playing Spotify tracks, albums
 
 ```
 gspotty/
+├── assets/
+│   └── images/          # Application images and screenshots
 ├── cmd/
 │   └── gspotty/          # Main application entry point
 ├── internal/
@@ -109,6 +130,18 @@ make clean
 # Run all tests
 make test
 
+# Format code
+make fmt
+
+# Run go vet
+make vet
+
+# Install dependencies
+make deps
+
+# Build and run the application
+make run
+
 # Show available make commands
 make help
 ```
@@ -139,10 +172,15 @@ Tests are organized into:
    cd gspotty
    ```
 
-2. Build the application:
+2. Install the application:
    ```
-   make build
+   make install
    ```
+   This will:
+   - Build the binary
+   - Install it to `/usr/local/bin/`
+   - Make the play script executable
+   - Install the play script to `/usr/local/bin/`
 
 3. Set up Spotify API credentials:
    ```
@@ -388,6 +426,15 @@ For a more convenient way to play music, you can use the included "play" bash sc
 
 ### Installation
 
+#### Using Makefile (Recommended)
+The play script is automatically installed when you run:
+```
+make install
+```
+
+#### Manual Installation
+Alternatively, you can install it manually:
+
 1. Make the script executable:
    ```
    chmod +x play
@@ -427,7 +474,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ```
 +----------------+------------------+
 | Author         | Nick Conolly     |
-| Version        | 0.2.3            |
+| Version        | 0.2.5            |
 | GitHub         | iamgaru          |
 +----------------+------------------+
 ```
