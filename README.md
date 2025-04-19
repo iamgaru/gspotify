@@ -1,7 +1,29 @@
 # gspotty
 
 <p align="center">
-  <img src="gs-gopher.png" alt="GSpotify Gopher" width="300">
+  <img src="assets/images/gs-gopher.png" alt="GSpotify Gopher" width="300">
+</p>
+
+## Example Screenshots
+
+Here are some examples of gspotty in action:
+
+<p align="center">
+  <img src="assets/images/dubstep-playlist-search.png" alt="Playlist Search" width="600">
+  <br>
+  <em>Searching for dubstep playlists</em>
+</p>
+
+<p align="center">
+  <img src="assets/images/quick-play.png" alt="Quick Play" width="600">
+  <br>
+  <em>Quick play feature in action</em>
+</p>
+
+<p align="center">
+  <img src="assets/images/multiple-players.png" alt="Multiple Players" width="600">
+  <br>
+  <em>Support for multiple players</em>
 </p>
 
 ## Table of Contents
