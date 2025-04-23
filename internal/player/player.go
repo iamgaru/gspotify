@@ -296,7 +296,11 @@ func (p *PlayerUI) updateInfoText() {
 
 	info := fmt.Sprintf(
 		"[green]Track:[white] %s\n[green]Artists:[white] %s\n[green]Album:[white] %s\n[green]Release Date:[white] %s%s\n\n"+
-			"[yellow]Press Space to play/pause. Press 'k' to toggle keep playing (%s). Press 'n' for next track. Press Esc to return.[white]",
+			"[yellow]Press Space to play/pause.\n"+
+			"Press 'k' to toggle keep playing (%s).\n"+
+			"Press 'n' for the next track, 'p' for the previous.\n"+
+			"Use arrow keys (left & right) to seek within a playing track.\n"+
+			"Press Esc to return.[white]",
 		p.track.Name,
 		strings.Join(artists, ", "),
 		p.track.Album.Name,
