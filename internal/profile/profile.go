@@ -3,7 +3,6 @@ package profile
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -15,13 +14,6 @@ import (
 	"github.com/zmb3/spotify/v2"
 )
 
-var userID = flag.String("u", "", "the Spotify user ID to look up")
-
-func init() {
-	// Add long flag alternative (hidden from help)
-	flag.StringVar(userID, "user", "", "")
-}
-
 // SpotifyClient interface for testing
 type SpotifyClient interface {
 	GetUsersPublicProfile(ctx context.Context, userID spotify.ID) (*spotify.User, error)
@@ -31,18 +23,15 @@ type SpotifyClient interface {
 var getSpotifyClientFunc = defaultGetSpotifyClient
 
 // GetProfile gets and displays the public profile information about a Spotify user.
-func GetProfile() {
-	flag.Parse()
-
-	if *userID == "" {
+func GetProfile(userID string) {
+	if userID == "" {
 		fmt.Fprintf(os.Stderr, "Error: missing user ID\n")
-		flag.Usage()
 		return
 	}
 
 	ctx := context.Background()
 	client := getSpotifyClientFunc(ctx)
-	displayProfile(ctx, client, *userID)
+	displayProfile(ctx, client, userID)
 }
 
 // defaultGetSpotifyClient creates a new Spotify client

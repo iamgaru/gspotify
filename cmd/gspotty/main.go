@@ -7,6 +7,7 @@ import (
 
 	"github.com/iamgaru/gspotty/internal/cli"
 	"github.com/iamgaru/gspotty/internal/menu"
+	"github.com/iamgaru/gspotty/internal/profile"
 	"golang.org/x/net/context"
 )
 
@@ -56,6 +57,7 @@ func main() {
 		keepPlaying  = flag.Bool("k", false, "Keep music playing when exiting the player interface")
 		autoPlay     = flag.Bool("p", false, "Automatically play the first result and exit")
 		stopPlayback = flag.Bool("s", false, "Stop the currently playing track")
+		userID       = flag.String("u", "", "Spotify user ID to look up profile information")
 	)
 
 	// Add long flag alternatives (kept for backward compatibility but not documented)
@@ -69,6 +71,7 @@ func main() {
 	flag.BoolVar(keepPlaying, "keep-playing", false, "")
 	flag.BoolVar(autoPlay, "auto-play", false, "")
 	flag.BoolVar(stopPlayback, "stop", false, "")
+	flag.StringVar(userID, "user", "", "")
 
 	// Define usage information
 	flag.Usage = func() {
@@ -110,6 +113,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  %s -q \"Bohemian Rhapsody\" -k\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -q \"Bohemian Rhapsody\" -p\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s -s\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -u spotify\n", os.Args[0])
 	}
 
 	flag.Parse()
@@ -117,6 +121,12 @@ func main() {
 	// Initialize Spotify client
 	ctx := context.Background()
 	client := cli.GetSpotifyClient(ctx)
+
+	// Check if user profile lookup is requested
+	if *userID != "" {
+		profile.GetProfile(*userID)
+		return
+	}
 
 	// Check if stop playback is requested
 	if *stopPlayback {

@@ -291,6 +291,20 @@ Automatically play the first result and continue playing after exit:
 ./gspotty -q "Bohemian Rhapsody" -p -k
 ```
 
+#### User Profile Lookup
+
+Look up a user's profile:
+```
+./gspotty -u spotify
+```
+
+This will display:
+- User ID
+- Display name
+- Spotify URI
+- Endpoint
+- Number of followers
+
 #### Combined Options
 
 Search for Queen albums with detailed information:
@@ -301,13 +315,6 @@ Search for Queen albums with detailed information:
 Search for workout playlists, limit to 10, and show details:
 ```
 ./gspotty -t playlist -q "workout" -l 10 -d
-```
-
-#### User Profile Lookup
-
-Look up a Spotify user's public profile:
-```
-./gspotty -u spotify
 ```
 
 ## Interactive Mode
