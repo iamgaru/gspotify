@@ -19,13 +19,11 @@ func MockGetProfile(t *testing.T) {
 	defer func() {
 		os.Setenv("SPOTIFY_ID", originalID)
 		os.Setenv("SPOTIFY_SECRET", originalSecret)
-		*userID = "" // Reset the flag
 	}()
 
 	t.Run("Missing User ID", func(t *testing.T) {
-		*userID = ""
 		assert.NotPanics(t, func() {
-			GetProfile()
+			GetProfile("")
 		})
 	})
 
@@ -33,10 +31,9 @@ func MockGetProfile(t *testing.T) {
 		// Set required environment variables
 		os.Setenv("SPOTIFY_ID", "test_id")
 		os.Setenv("SPOTIFY_SECRET", "test_secret")
-		*userID = "test_user"
 
 		assert.NotPanics(t, func() {
-			GetProfile()
+			GetProfile("test_user")
 		})
 	})
 }
@@ -70,20 +67,17 @@ func TestProfile(t *testing.T) {
 		defer func() {
 			os.Setenv("SPOTIFY_ID", originalID)
 			os.Setenv("SPOTIFY_SECRET", originalSecret)
-			*userID = "" // Reset the flag
 		}()
 
 		t.Run("Missing User ID", func(t *testing.T) {
-			*userID = ""
 			assert.NotPanics(t, func() {
-				GetProfile()
+				GetProfile("")
 			})
 		})
 
 		t.Run("With Valid Configuration", func(t *testing.T) {
-			*userID = "test_user"
 			assert.NotPanics(t, func() {
-				GetProfile()
+				GetProfile("test_user")
 			})
 		})
 	})
